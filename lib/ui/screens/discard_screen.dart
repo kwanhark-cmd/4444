@@ -97,7 +97,7 @@ class _DiscardDetailScreenState extends State<DiscardDetailScreen> {
               label: const Text('읽어 주기'),
             ),
           ),
-          const SectionTitle('♻️ 버리는 방법'),
+          const SectionTitle('버리는 방법'),
           Panel(child: Text(a.howTo, style: const TextStyle(fontSize: 17, height: 1.5))),
           if (a.bulky) ...[
             const SectionTitle('대형폐기물 신고'),
@@ -113,7 +113,7 @@ class _DiscardDetailScreenState extends State<DiscardDetailScreen> {
               ),
             ),
           ],
-          const SectionTitle('🎁 무료 나눔·기부'),
+          const SectionTitle('무료 나눔·기부'),
           Panel(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,7 +126,7 @@ class _DiscardDetailScreenState extends State<DiscardDetailScreen> {
               ],
             ),
           ),
-          const SectionTitle('🖼️ 디지털로 남기고 버리기'),
+          const SectionTitle('디지털로 남기고 버리기'),
           Text(a.memory ? '추억이 담긴 물건이네요. 사진과 사연만 남기고 실물은 비워 보세요.' : '사진과 사연을 남겨 두면 버려도 기억은 남아요.', style: const TextStyle(fontSize: 17)),
           const SizedBox(height: 8),
           BigButton(

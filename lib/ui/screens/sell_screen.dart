@@ -316,7 +316,7 @@ class _SellDetailScreenState extends State<SellDetailScreen> {
 }
 
 const shippingGuide =
-    '📦 포장·발송 방법\n'
+    '포장·발송 방법\n'
     '1. 물건을 깨끗이 닦고, 사진을 한 장 더 찍어 두세요(발송 전 상태 기록).\n'
     '2. 깨지는 물건은 뽁뽁이(에어캡)로 두세 겹 싸고, 상자 빈 곳은 신문지로 채워요.\n'
     '3. 상자는 테이프로 "H" 모양으로 단단히 붙여요.\n'

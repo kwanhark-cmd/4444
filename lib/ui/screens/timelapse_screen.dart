@@ -198,7 +198,7 @@ class _Credits extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Text(
-            '🎬 집 비우기 대작전',
+            '집 비우기 대작전',
             style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
