@@ -48,6 +48,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
           : l.isEmpty
           ? const Center(child: EmptyState(message: '아직 알림이 없어요.'))
           : ListView(
+              key: const PageStorageKey('notices_1'),
               padding: const EdgeInsets.all(AppSizes.page),
               children: [
                 for (final n in l)

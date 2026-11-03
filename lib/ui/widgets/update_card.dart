@@ -33,9 +33,9 @@ class _UpdateCardState extends State<UpdateCard> {
       } else {
         await showUpdateDialog(context, info);
       }
-    } catch (e) {
-      log.error('[업데이트 확인] 실패', e);
-      if (mounted) toast(context, '업데이트를 확인하지 못했어요. 인터넷 연결을 확인해 주세요.');
+    } catch (e, st) {
+      if (mounted) setState(() => checking = false);
+      await showFailure(null, stage: '업데이트', message: '업데이트를 확인하지 못했어요. 인터넷 연결을 확인해 주세요.', error: e, stack: st, onRetry: _check);
     } finally {
       if (mounted) setState(() => checking = false);
     }
@@ -128,11 +128,9 @@ Future<void> showUpdateDialog(BuildContext context, UpdateInfo info) async {
     }
   } on UserFacingException catch (e) {
     if (nav.mounted) nav.pop();
-    log.error('[업데이트 설치] ${e.message}');
-    showMessage(e.message);
+    await showFailure(null, stage: '업데이트', message: e.message);
   } catch (e, st) {
     if (nav.mounted) nav.pop();
-    log.error('[업데이트 설치] 실패', e, st);
-    showMessage('업데이트를 설치하지 못했어요. 문제 신고로 기록을 보내 주세요.');
+    await showFailure(null, stage: '업데이트', message: '업데이트를 설치하지 못했어요. 다시 해 보거나 문제 신고로 기록을 보내 주세요.', error: e, stack: st);
   }
 }

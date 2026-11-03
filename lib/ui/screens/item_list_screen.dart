@@ -104,6 +104,7 @@ class _ItemListScreenState extends State<ItemListScreen> {
                     ),
                   )
                 : ListView.separated(
+                    key: const PageStorageKey('item_list_1'),
                     padding: const EdgeInsets.all(AppSizes.page),
                     itemCount: list.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 10),

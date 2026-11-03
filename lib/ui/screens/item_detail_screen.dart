@@ -88,6 +88,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     return AppPage(
       title: it.name,
       body: ListView(
+        key: const PageStorageKey('item_detail_1'),
         padding: const EdgeInsets.all(AppSizes.page),
         children: [
           ClipRRect(

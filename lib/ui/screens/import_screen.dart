@@ -45,6 +45,7 @@ class _ImportScreenState extends State<ImportScreen> {
     return AppPage(
       title: '정리 글 가져오기',
       body: ListView(
+        key: const PageStorageKey('import_1'),
         padding: const EdgeInsets.all(AppSizes.page),
         children: [
           Text('제미나이에서 정리한 글이나 다른 앱의 물건 목록 파일을 넣거나, 제미나이 앱에서 "공유하기 → 이 앱"을 누르세요. 가져온 내용은 확인한 뒤에 등록돼요.', style: Theme.of(context).textTheme.bodyLarge),

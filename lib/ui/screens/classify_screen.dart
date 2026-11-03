@@ -146,6 +146,7 @@ class _ClassifyScreenState extends State<ClassifyScreen> with SingleTickerProvid
         builder: (context, c) {
           final cardH = max(220.0, min(c.maxHeight * 0.45, 420.0));
           return ListView(
+            key: const PageStorageKey('classify_1'),
             padding: const EdgeInsets.all(AppSizes.page),
             children: [
               const FirstTimeTip(id: 'swipe', text: '사진을 왼쪽으로 밀면 폐기, 오른쪽은 판매, 위로 밀면 지금 쓰는 것이에요. 아래 버튼을 눌러도 돼요.'),

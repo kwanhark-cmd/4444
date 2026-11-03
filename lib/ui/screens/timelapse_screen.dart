@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/format.dart';
-import '../../core/logger.dart';
 import '../../data/models.dart';
 import '../../services/media_picker.dart';
 import '../../state/app_state.dart';
@@ -55,6 +54,7 @@ class _TimelapseScreenState extends State<TimelapseScreen> {
     return AppPage(
       title: '타임랩스',
       body: ListView(
+        key: const PageStorageKey('timelapse_1'),
         padding: const EdgeInsets.all(AppSizes.page),
         children: [
           const FirstTimeTip(id: 'timelapse', text: '같은 자리를 같은 방향에서 일주일에 한 번쯤 찍어 두면, 집이 비워지는 모습을 영상처럼 볼 수 있어요.'),
@@ -138,8 +138,9 @@ class _TimelapsePlayerState extends State<TimelapsePlayer> {
       final f = await s.timelapse.makeGif(shots.map((e) => e.path).toList(), creditsPng: credits, spot: widget.spot);
       if (mounted) toast(context, '1번 앱용 폴더에 저장했어요: ${f.path.split(RegExp(r'[\\/]')).last}');
     } catch (e, st) {
-      log.error('타임랩스 만들기 실패', e, st);
-      if (mounted) toast(context, '타임랩스를 만들지 못했어요. 사진이 너무 많으면 몇 장을 지워 보세요.');
+      if (mounted) setState(() => making = false);
+      await showFailure(null, stage: '타임랩스', message: '타임랩스를 만들지 못했어요. 사진이 너무 많으면 몇 장을 지워 보세요.', error: e, stack: st, onRetry: _make);
+      return;
     }
     if (mounted) setState(() => making = false);
   }
@@ -152,6 +153,7 @@ class _TimelapsePlayerState extends State<TimelapsePlayer> {
     return AppPage(
       title: widget.spot,
       body: ListView(
+        key: const PageStorageKey('timelapse_2'),
         padding: const EdgeInsets.all(AppSizes.page),
         children: [
           AspectRatio(

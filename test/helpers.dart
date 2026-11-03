@@ -60,13 +60,25 @@ class FakePicker implements MediaPicker {
   final List<PickedFile> photos;
   String? video;
   String? backup;
-  FakePicker({List<PickedFile>? photos}) : photos = photos ?? [];
+  bool camera;
+  PickException? cameraError;
+  int pickCalls = 0;
+  String? textFile;
+  FakePicker({List<PickedFile>? photos, this.camera = false, this.cameraError, this.textFile}) : photos = photos ?? [];
   @override
-  bool get hasCamera => false;
+  bool get hasCamera => camera;
   @override
-  Future<PickedFile?> takePhoto() async => photos.isEmpty ? null : photos.first;
+  Future<PickedFile?> takePhoto() async {
+    if (cameraError != null) throw cameraError!;
+    return photos.isEmpty ? null : photos.first;
+  }
+
   @override
-  Future<List<PickedFile>> pickPhotos() async => photos;
+  Future<List<PickedFile>> pickPhotos() async {
+    pickCalls++;
+    return photos;
+  }
+
   @override
   Future<String?> takeVideo() async => video;
   @override
@@ -76,7 +88,7 @@ class FakePicker implements MediaPicker {
   @override
   Future<String?> chooseSaveFolder() async => null;
   @override
-  Future<String?> pickTextFile() async => '이름,분류\n커피 머신,판매';
+  Future<String?> pickTextFile() async => textFile ?? '이름,분류\n커피 머신,판매';
 }
 
 /// 가짜 영상 장면 뽑기: 정해진 장 수만큼 JPEG 저장

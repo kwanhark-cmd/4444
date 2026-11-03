@@ -143,7 +143,7 @@ class AppState extends ChangeNotifier {
     lastCheck = await sales.dailyCheck(uid, user, now);
     await _dailyNotice();
     if (user.dailyOn) {
-      await notifier.scheduleDaily(user.dailyHour, '오늘은 물건 하나만 정해 보세요', '앱을 열고 오늘의 물건을 지금 쓰는 것·판매·폐기 중 하나로 정해요.');
+      await notifier.scheduleDaily(user.dailyHour, global.appName, '오늘은 물건 하나만 정해 보세요. 지금 쓰는 것·판매·폐기 중 하나로 정해요.');
     }
     await refresh();
   }
@@ -196,7 +196,7 @@ class AppState extends ChangeNotifier {
   Future<void> saveUser() async {
     await user.save(repo, uid, secrets);
     if (user.dailyOn) {
-      await notifier.scheduleDaily(user.dailyHour, '오늘은 물건 하나만 정해 보세요', '앱을 열고 오늘의 물건을 정해요.');
+      await notifier.scheduleDaily(user.dailyHour, global.appName, '오늘은 물건 하나만 정해 보세요.');
     } else {
       await notifier.cancelDaily();
     }

@@ -54,8 +54,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _takePhoto() async {
-    final f = await context.read<MediaPicker>().takePhoto();
-    if (f != null) await _process([f]);
+    final picker = context.read<MediaPicker>();
+    try {
+      final f = await picker.takePhoto();
+      if (f != null) await _process([f]);
+    } on PickException catch (e) {
+      // 카메라 권한 거부·카메라 없음: 오류 대신 안내하고 사진 파일 고르기로 자동 대체
+      log.error('[카메라] ${e.kind} ${e.detail}');
+      showMessage(e.userMessage);
+      await _pickPhotos();
+    }
   }
 
   Future<void> _pickPhotos() async {
@@ -65,8 +73,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _video({required bool take}) async {
     final picker = context.read<MediaPicker>();
-    final path = take ? await picker.takeVideo() : await picker.pickVideo();
+    String? path;
+    try {
+      path = take ? await picker.takeVideo() : await picker.pickVideo();
+    } on PickException catch (e) {
+      log.error('[카메라] 영상 ${e.kind} ${e.detail}');
+      showMessage(e.userMessage.replaceAll('사진 파일', '영상 파일'));
+      path = await picker.pickVideo();
+    }
     if (path == null || !mounted) return;
+    final videoPath = path;
     final s = context.read<AppState>();
     setState(() {
       busy = true;
@@ -76,7 +92,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
     try {
       final frames = await s.video.extractFrames(
-        path,
+        videoPath,
         cancel: cancel,
         onProgress: (v) {
           if (mounted) setState(() => progress = v * 0.3);
@@ -85,15 +101,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (cancel!.cancelled) return _stop('취소했어요');
       if (frames.isEmpty) {
         _stop('');
-        if (mounted) toast(context, '이 기기에서는 영상에서 장면을 뽑지 못했어요. 사진 여러 장을 골라 주세요.');
+        await showFailure(null, stage: '영상', message: '이 기기에서는 영상에서 장면을 뽑지 못했어요. 사진 여러 장을 골라 주세요.', altLabel: '사진 고르기', onAlt: _pickPhotos);
         return;
       }
       final files = <PickedFile>[for (final f in frames) PickedFile(f, await File(f).readAsBytes())];
       await _process(files, fromVideo: true, startProgress: 0.3);
     } catch (e, st) {
-      log.error('영상 처리 실패', e, st);
       _stop('');
-      if (mounted) toast(context, '영상을 처리하지 못했어요. 사진으로 등록해 주세요.');
+      await showFailure(
+        null,
+        stage: '영상',
+        message: '영상을 처리하지 못했어요. 다시 해 보거나 사진으로 등록해 주세요.',
+        error: e,
+        stack: st,
+        onRetry: () => _video(take: false),
+        altLabel: '사진으로 등록',
+        onAlt: _pickPhotos,
+      );
     }
   }
 
@@ -122,8 +146,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       SavedPhoto photo;
       try {
         photo = await s.savePhoto(files[i].bytes, ext: files[i].ext);
-      } catch (e) {
-        log.warn('사진 저장 실패: $e');
+      } catch (e, st) {
+        log.error('[저장] 사진 저장 실패', e, st);
         batches.add(DetectionBatch(null, [], error: '사진을 읽지 못했어요. 다른 사진을 골라 주세요.'));
         continue;
       }
@@ -136,9 +160,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
         batches.add(DetectionBatch(photo, r.value));
       } on AiException catch (e) {
+        log.error('[AI 인식] ${e.kind} ${e.detail ?? ''}');
         batches.add(DetectionBatch(photo, [DetectedItem(name: '', reason: '')], error: e.userMessage));
       } catch (e, st) {
-        log.error('인식 중 오류', e, st);
+        log.error('[AI 인식] 인식 중 오류', e, st);
         batches.add(DetectionBatch(photo, [DetectedItem(name: '')], error: '사진에서 물건을 알아보지 못했어요. 직접 이름을 적어주세요.'));
       }
       if (mounted) setState(() => progress = startProgress + (1 - startProgress) * (i + 1) / files.length);
@@ -186,6 +211,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: busy
           ? _busyView(p)
           : ListView(
+              key: const PageStorageKey('register'),
               padding: const EdgeInsets.all(AppSizes.page),
               children: [
                 const FirstTimeTip(id: 'register', text: '방 전체를 영상으로 천천히 찍으면 AI가 물건을 하나씩 골라내요. 애매한 물건은 사진으로 따로 찍으세요.'),

@@ -50,6 +50,7 @@ class ProgressScreen extends StatelessWidget {
     return AppPage(
       title: '진행 현황',
       body: ListView(
+        key: const PageStorageKey('progress_1'),
         padding: const EdgeInsets.all(AppSizes.page),
         children: [
           Panel(

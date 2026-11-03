@@ -97,6 +97,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return AppPage(
       title: '설정',
       body: ListView(
+        key: const PageStorageKey('settings_1'),
         padding: const EdgeInsets.all(AppSizes.page),
         children: [
           // ---------- 맨 위: 업데이트 · 문제 신고 ----------

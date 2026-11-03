@@ -22,6 +22,7 @@ class DiscardScreen extends StatelessWidget {
     return AppPage(
       title: '폐기 도우미',
       body: ListView(
+        key: const PageStorageKey('discard_1'),
         padding: const EdgeInsets.all(AppSizes.page),
         children: [
           if (s.user.regionLabel.isEmpty)
@@ -83,6 +84,7 @@ class _DiscardDetailScreenState extends State<DiscardDetailScreen> {
     return AppPage(
       title: '폐기: ${it.name}',
       body: ListView(
+        key: const PageStorageKey('discard_2'),
         padding: const EdgeInsets.all(AppSizes.page),
         children: [
           ClipRRect(

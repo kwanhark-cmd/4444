@@ -35,7 +35,7 @@ dependencies:
   uuid: 4.6.0
   fc_native_video_thumbnail: 4.0.0
   flutter_secure_storage: 11.2.0
-  window_manager: 0.6.0
+  window_manager: 0.5.1
   url_launcher: 6.3.3
   open_filex: 5.0.0
 
@@ -50,6 +50,7 @@ flutter:
     - assets/emoji/
     - assets/mascot/
     - assets/licenses/
+    - assets/app_icons/
   fonts:
     - family: NotoSansKR
       fonts:

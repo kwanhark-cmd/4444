@@ -82,6 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: SafeArea(
         child: ListView(
+          key: const PageStorageKey('home_1'),
           padding: const EdgeInsets.fromLTRB(AppSizes.page, 0, AppSizes.page, 120),
           children: [
             if (s.unread.isNotEmpty)

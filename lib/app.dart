@@ -35,9 +35,9 @@ class BinugiApp extends StatelessWidget {
         builder: (context, s, _) => MaterialApp(
           navigatorKey: navKey,
           scaffoldMessengerKey: messengerKey,
-          title: '집안 물건 비우기 판매 폐기 비서',
+          title: s.global.appName,
           debugShowCheckedModeBanner: false,
-          theme: buildTheme(s.global.theme, reduceMotion: s.global.reduceMotion),
+          theme: buildTheme(s.global.theme, reduceMotion: s.global.reduceMotion, colorTheme: s.global.colorTheme),
           locale: const Locale('ko', 'KR'),
           supportedLocales: const [Locale('ko', 'KR')],
           localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],

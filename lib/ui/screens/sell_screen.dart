@@ -29,6 +29,7 @@ class SellScreen extends StatelessWidget {
               ),
             )
           : ListView(
+              key: const PageStorageKey('sell_1'),
               padding: const EdgeInsets.all(AppSizes.page),
               children: [
                 const FirstTimeTip(id: 'sell', text: '판매글을 만들어 "복사"한 뒤, 당근마켓이나 번개장터 앱에 직접 붙여넣어 올리세요. 이 앱은 대신 올리지 않아요.'),
@@ -154,6 +155,7 @@ class _SellDetailScreenState extends State<SellDetailScreen> {
     return AppPage(
       title: '판매: ${it.name}',
       body: ListView(
+        key: const PageStorageKey('sell_2'),
         padding: const EdgeInsets.all(AppSizes.page),
         children: [
           ClipRRect(

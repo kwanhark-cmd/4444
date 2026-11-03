@@ -69,6 +69,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
     return AppPage(
       title: '찾은 물건 확인',
       body: ListView(
+        key: const PageStorageKey('review_1'),
         padding: const EdgeInsets.all(AppSizes.page),
         children: [
           const FirstTimeTip(id: 'review', text: '이름이 틀렸으면 눌러서 고치고, 빠진 물건은 "놓친 물건 추가"로 넣으세요. 체크를 끄면 등록하지 않아요.'),
