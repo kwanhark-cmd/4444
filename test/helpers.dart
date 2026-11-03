@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:binugi/core/clock.dart';
 import 'package:binugi/services/media_picker.dart';
 import 'package:binugi/services/notification_service.dart';
+import 'package:binugi/services/secret_store.dart';
 import 'package:binugi/services/video_service.dart';
 import 'package:binugi/services/voice_service.dart';
 import 'package:binugi/state/app_state.dart';
@@ -20,18 +21,22 @@ Future<(AppState, Directory)> makeState({
   FrameExtractor? extractor,
   SilentVoice? voice,
   SilentNotifier? notifier,
+  SecretStore? secrets,
+  Directory? root,
+  String? dbPath,
 }) async {
   sqfliteFfiInit();
-  final dir = await Directory.systemTemp.createTemp('binugi_test_');
+  final dir = root ?? await Directory.systemTemp.createTemp('binugi_test_');
   final s = await AppState.open(
     dbFactory: databaseFactoryFfiNoIsolate,
     root: dir,
-    dbPath: 'file:mem${_n++}_${DateTime.now().microsecondsSinceEpoch}?mode=memory&cache=shared',
+    dbPath: dbPath ?? 'file:mem${_n++}_${DateTime.now().microsecondsSinceEpoch}?mode=memory&cache=shared',
     clock: clock ?? FakeClock(DateTime(2026, 1, 1, 9)),
     voice: voice ?? SilentVoice(),
     notifier: notifier ?? SilentNotifier(),
     httpClient: httpClient ?? _NoNetwork(),
     extractor: extractor,
+    secretStore: secrets ?? MemorySecretStore(),
   );
   return (s, dir);
 }

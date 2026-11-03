@@ -18,12 +18,15 @@ import '../services/export_service.dart';
 import '../services/image_service.dart';
 import '../services/notification_service.dart';
 import '../services/paths.dart';
+import '../services/secret_store.dart';
+import '../services/update_service.dart';
 import '../services/sale_service.dart';
 import '../services/timelapse_service.dart';
 import '../services/video_service.dart';
 import '../services/voice_service.dart';
 
-const appVersion = '1.0.0';
+/// 앱 버전 (pubspec.yaml의 version과 같아야 함 — 테스트로 확인)
+const appVersion = '1.1.0';
 
 /// 화면 전체가 함께 쓰는 상태
 class AppState extends ChangeNotifier {
@@ -39,6 +42,11 @@ class AppState extends ChangeNotifier {
   late final ExportService exports;
   late final BackupService backup;
   late final TimelapseService timelapse;
+  late final SecretStore secrets;
+  late final UpdateService updates;
+
+  /// 오류 창 등에서 보여 줄 마지막 시작 정보 (자료 변환 전 자동 백업 파일 등)
+  File? preUpgradeBackup;
 
   GlobalSettings global = GlobalSettings();
   UserSettings user = UserSettings();
@@ -50,7 +58,12 @@ class AppState extends ChangeNotifier {
   Item? today;
   SaleCheckResult? lastCheck;
 
-  AppState._(this.repo, this.paths, this.clock, this.voice, this.notifier, http.Client? httpClient, FrameExtractor? extractor) {
+  final http.Client _http;
+
+  AppState._(this.repo, this.paths, this.clock, this.voice, this.notifier, http.Client? httpClient, FrameExtractor? extractor, SecretStore? secretStore)
+    : _http = httpClient ?? http.Client() {
+    secrets = secretStore ?? DeviceSecretStore(repo);
+    updates = UpdateService(client: _http, paths: paths, currentVersion: appVersion);
     ai = AiService(repo, clock, httpClient: httpClient);
     sales = SaleService(repo, clock);
     images = ImageService(paths);
@@ -69,11 +82,28 @@ class AppState extends ChangeNotifier {
     Notifier? notifier,
     http.Client? httpClient,
     FrameExtractor? extractor,
+    SecretStore? secretStore,
   }) async {
     final paths = AppPaths(root);
-    final db = await openAppDatabase(dbFactory, dbPath ?? paths.dbPath);
-    final s = AppState._(Repository(db), paths, clock, voice ?? SilentVoice(), notifier ?? SilentNotifier(), httpClient, extractor);
+    final path = dbPath ?? paths.dbPath;
     await log.attachFile(File(p.join(paths.logs.path, 'app.log')));
+    // 자료 변환이 필요하면 먼저 자동 백업(사진 포함)
+    File? pre;
+    final oldVersion = path.startsWith('file:') ? null : await peekVersion(dbFactory, path);
+    if (oldVersion != null && oldVersion > 0 && oldVersion < dataVersion) {
+      final raw = await dbFactory.openDatabase(path, options: OpenDatabaseOptions(singleInstance: false));
+      try {
+        pre = await BackupService(Repository(raw), paths).createSafetyBackup('자료변환_v$oldVersion', appVersion: appVersion);
+        log.info('자료 변환 전 자동 백업: v$oldVersion → v$dataVersion');
+      } catch (e, st) {
+        log.error('자료 변환 전 자동 백업 실패', e, st);
+      } finally {
+        await raw.close();
+      }
+    }
+    final db = await openAppDatabase(dbFactory, path);
+    final s = AppState._(Repository(db), paths, clock, voice ?? SilentVoice(), notifier ?? SilentNotifier(), httpClient, extractor, secretStore);
+    s.preUpgradeBackup = pre;
     await s.startup();
     return s;
   }
@@ -96,7 +126,11 @@ class AppState extends ChangeNotifier {
     }
     currentUser = users.firstWhere((u) => u.id == global.currentUserId, orElse: () => users.first);
     global.currentUserId = currentUser!.id;
-    user = await UserSettings.load(repo, uid);
+    user = await UserSettings.load(repo, uid, secrets);
+    // 이미 쓰던 자료가 있으면 첫 실행 마법사는 건너뜀 (업데이트 후 다시 묻지 않기)
+    if (!global.onboarded && (await repo.items(uid, includePractice: true)).isNotEmpty) {
+      global.onboarded = true;
+    }
     await voice.init();
     await notifier.init();
     await runDailyChecks();
@@ -160,7 +194,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> saveUser() async {
-    await user.save(repo, uid);
+    await user.save(repo, uid, secrets);
     if (user.dailyOn) {
       await notifier.scheduleDaily(user.dailyHour, '오늘은 물건 하나만 정해 보세요', '앱을 열고 오늘의 물건을 정해요.');
     } else {
@@ -169,12 +203,44 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ---------- 업데이트 ----------
+  UpdateInfo? update;
+
+  /// 앱 시작 시 하루 한 번 조용히 확인 (실패해도 아무 말 안 함)
+  Future<void> quietUpdateCheck() async {
+    final key = '${clock.now().year}-${clock.now().month}-${clock.now().day}';
+    if (global.lastUpdateCheck == key) return;
+    try {
+      update = await updates.check();
+      global.lastUpdateCheck = key;
+      global.latestVersion = update?.version;
+      global.latestNotes = update?.notes ?? '';
+      await global.save(repo);
+      notifyListeners();
+    } catch (e) {
+      log.info('조용한 업데이트 확인 실패: $e');
+    }
+  }
+
+  /// 설정의 "업데이트 확인" 버튼
+  Future<UpdateInfo?> checkUpdateNow() async {
+    update = await updates.check();
+    global.lastUpdateCheck = '${clock.now().year}-${clock.now().month}-${clock.now().day}';
+    global.latestVersion = update?.version;
+    global.latestNotes = update?.notes ?? '';
+    await global.save(repo);
+    notifyListeners();
+    return update;
+  }
+
+  bool get hasUpdate => global.latestVersion != null && compareVersions(global.latestVersion!, appVersion) > 0;
+
   // ---------- 사용자 ----------
   Future<void> switchUser(int id) async {
     currentUser = users.firstWhere((u) => u.id == id);
     global.currentUserId = id;
     await global.save(repo);
-    user = await UserSettings.load(repo, id);
+    user = await UserSettings.load(repo, id, secrets);
     await runDailyChecks();
   }
 
@@ -207,8 +273,10 @@ class AppState extends ChangeNotifier {
     Decision? suggestion,
     String reason = '',
     Decision? decision,
+    bool isPractice = false,
   }) async {
     final item = Item(
+      isPractice: isPractice,
       userId: uid,
       name: name.trim().isEmpty ? '이름 없는 물건' : name.trim(),
       kind: kind,

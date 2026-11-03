@@ -9,6 +9,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'app.dart';
 import 'core/logger.dart';
+import 'services/data_location.dart';
 import 'services/media_picker.dart';
 import 'services/notification_service.dart';
 import 'services/voice_service.dart';
@@ -43,6 +44,7 @@ Future<void> main() async {
       factory = sqflite.databaseFactory;
     }
     final root = Directory('${(await getApplicationSupportDirectory()).path}${Platform.pathSeparator}binugi');
+    await migrateLegacyData(root);
     await root.create(recursive: true);
     AppState? state;
     Object? startError;
@@ -53,5 +55,7 @@ Future<void> main() async {
       startError = e;
     }
     runApp(state == null ? StartFailedApp(error: '$startError') : BinugiApp(state: state, picker: DeviceMediaPicker()));
+    // 하루 한 번 조용히 새 버전 확인 (자동으로 내려받지는 않음)
+    state?.quietUpdateCheck();
   }, (e, st) => log.error('처리 안 된 오류', e, st));
 }

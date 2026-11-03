@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
+    <!-- 새 버전 APK 설치 화면 열기 (사용자가 직접 누를 때만) -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     <application
         android:label="비우기 비서"
         android:name="${applicationName}"

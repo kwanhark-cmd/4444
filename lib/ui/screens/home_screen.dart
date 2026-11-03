@@ -59,6 +59,18 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('비우기 비서'),
         actions: [
+          if (s.hasUpdate)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: ActionChip(
+                backgroundColor: p.attention,
+                label: Text(
+                  '새 버전 있어요',
+                  style: TextStyle(color: p.onAttention, fontWeight: FontWeight.w700),
+                ),
+                onPressed: () => go(context, const SettingsScreen()),
+              ),
+            ),
           IconButton(
             tooltip: '알림',
             iconSize: 30,

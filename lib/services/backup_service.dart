@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:cryptography/cryptography.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 import 'package:path/path.dart' as p;
 
 import '../core/errors.dart';
@@ -28,7 +29,7 @@ class BackupService {
   Future<Uint8List> createBytes(String password, {required String appVersion}) async {
     if (password.length < 4) throw UserFacingException('비밀번호는 4글자 이상으로 정해 주세요.');
     final dump = await repo.dumpAll();
-    dump['settings'] = dump['settings']!.where((r) => !secretSettingKeys.contains(r['key'])).toList();
+    dump['settings'] = dump['settings']!.where((r) => !isSecretSettingKey(r['key'] as String)).toList();
     final archive = Archive();
     final meta = utf8.encode(jsonEncode({'dataVersion': dataVersion, 'appVersion': appVersion, 'createdAt': DateTime.now().toIso8601String()}));
     archive.addFile(ArchiveFile('meta.json', meta.length, meta));
@@ -97,8 +98,8 @@ class BackupService {
       for (final t in Repository.backupTables) t: ((raw[t] as List?) ?? const []).map((r) => Map<String, Object?>.from(r as Map)).toList(),
     };
     // 지금 기기의 AI 키는 지키기
-    final keepSecrets = (await repo.dumpAll())['settings']!.where((r) => secretSettingKeys.contains(r['key'])).toList();
-    data['settings'] = [...data['settings']!.where((r) => !secretSettingKeys.contains(r['key'])), ...keepSecrets];
+    final keepSecrets = (await repo.dumpAll())['settings']!.where((r) => isSecretSettingKey(r['key'] as String)).toList();
+    data['settings'] = [...data['settings']!.where((r) => !isSecretSettingKey(r['key'] as String)), ...keepSecrets];
     if (v < 2) {
       for (final row in data['items']!) {
         row.putIfAbsent('digital_keep', () => 0);
@@ -111,6 +112,71 @@ class BackupService {
       if (!p.isWithin(paths.root.path, out.path)) continue;
       await out.parent.create(recursive: true);
       await out.writeAsBytes(f.content);
+    }
+  }
+
+  // ---------- 자동 안전 백업 (자료 변환·업데이트 설치 전) ----------
+  /// 기기 안에만 두는 자동 백업. 비밀 값은 넣지 않습니다. 최근 [keep]개만 남김.
+  Future<File> createSafetyBackup(String reason, {required String appVersion, int keep = 3}) async {
+    final dump = await repo.dumpAll();
+    dump['settings'] = dump['settings']!.where((r) => !isSecretSettingKey(r['key'] as String)).toList();
+    final archive = Archive();
+    final meta = utf8.encode(
+      jsonEncode({'dataVersion': await repo.db.getVersion(), 'appVersion': appVersion, 'reason': reason, 'createdAt': DateTime.now().toIso8601String()}),
+    );
+    archive.addFile(ArchiveFile('meta.json', meta.length, meta));
+    final data = utf8.encode(jsonEncode(dump));
+    archive.addFile(ArchiveFile('data.json', data.length, data));
+    for (final d in _mediaDirs) {
+      final dir = Directory(p.join(paths.root.path, d));
+      if (!await dir.exists()) continue;
+      await for (final f in dir.list()) {
+        if (f is File) {
+          final bytes = await f.readAsBytes();
+          archive.addFile(ArchiveFile('$d/${p.basename(f.path)}', bytes.length, bytes));
+        }
+      }
+    }
+    final dir = Directory(p.join(paths.backups.path, '자동'));
+    await dir.create(recursive: true);
+    final f = File(p.join(dir.path, '자동백업_${reason}_${DateTime.now().millisecondsSinceEpoch}.zip'));
+    await f.writeAsBytes(ZipEncoder().encode(archive));
+    final all = safetyBackups();
+    for (final old in all.skip(keep)) {
+      try {
+        old.deleteSync();
+      } catch (_) {}
+    }
+    return f;
+  }
+
+  /// 자동 백업 목록 (새것부터)
+  List<File> safetyBackups() {
+    final dir = Directory(p.join(paths.backups.path, '자동'));
+    if (!dir.existsSync()) return [];
+    final l = dir.listSync().whereType<File>().where((f) => f.path.endsWith('.zip')).toList()
+      ..sort((a, b) => b.statSync().modified.compareTo(a.statSync().modified));
+    return l;
+  }
+
+  /// 자동 백업에서 되살리기
+  Future<void> restoreSafetyBackup(File f) async {
+    final archive = ZipDecoder().decodeBytes(await f.readAsBytes());
+    final dataFile = archive.findFile('data.json');
+    if (dataFile == null) throw UserFacingException('자동 백업 파일이 망가졌어요.');
+    final raw = jsonDecode(utf8.decode(dataFile.content)) as Map<String, dynamic>;
+    final data = <String, List<Map<String, Object?>>>{
+      for (final t in Repository.backupTables) t: ((raw[t] as List?) ?? const []).map((r) => Map<String, Object?>.from(r as Map)).toList(),
+    };
+    final keepSecrets = (await repo.dumpAll())['settings']!.where((r) => isSecretSettingKey(r['key'] as String)).toList();
+    data['settings'] = [...data['settings']!.where((r) => !isSecretSettingKey(r['key'] as String)), ...keepSecrets];
+    await repo.restoreAll(data);
+    for (final a in archive.files) {
+      if (!a.isFile || !_mediaDirs.any((d) => a.name.startsWith('$d/'))) continue;
+      final out = File(p.join(paths.root.path, a.name));
+      if (!p.isWithin(paths.root.path, out.path)) continue;
+      await out.parent.create(recursive: true);
+      await out.writeAsBytes(a.content);
     }
   }
 }

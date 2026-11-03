@@ -22,20 +22,22 @@ jobs:
           channel: stable
           cache: true
       - name: 리눅스 빌드 도구
-        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev ninja-build clang cmake pkg-config liblzma-dev libsqlite3-dev libavformat-dev libavcodec-dev libavutil-dev libswscale-dev
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev ninja-build clang cmake pkg-config liblzma-dev libsqlite3-dev libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libsecret-1-dev
       - run: flutter pub get
       - name: 형식 검사
-        run: dart format --output=none --set-exit-if-changed --line-length 160 lib test
+        run: dart format --output=none --set-exit-if-changed --line-length 160 lib test test_screens
       - name: 코드 검사
         run: flutter analyze
       - name: 테스트
         run: flutter test
       - name: 리눅스 빌드
         run: flutter build linux --release
+      - name: 리눅스 묶기
+        run: tar -czf binugi-linux.tar.gz -C build/linux/x64/release bundle
       - uses: actions/upload-artifact@v4
         with:
           name: 리눅스-앱
-          path: build/linux/x64/release/bundle
+          path: binugi-linux.tar.gz
 
   android:
     name: 안드로이드 APK
@@ -52,12 +54,25 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
+      - name: 서명 열쇠 준비 (GitHub Secrets — 절대 바꾸지 말 것)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.jks
+            printf "storeFile=release.jks\nstorePassword=%s\nkeyAlias=binugi\nkeyPassword=%s\n" "$KEYSTORE_PASSWORD" "$KEYSTORE_PASSWORD" > android/key.properties
+            echo "고정 서명 열쇠 사용"
+          else
+            echo "::warning::ANDROID_KEYSTORE_BASE64 비밀 값이 없어 임시 열쇠로 서명합니다. 이 APK는 다음 버전으로 덮어쓰기 설치가 안 됩니다."
+          fi
       - run: flutter pub get
       - run: flutter build apk --release
+      - run: cp build/app/outputs/flutter-apk/app-release.apk binugi-android.apk
       - uses: actions/upload-artifact@v4
         with:
           name: 안드로이드-APK
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: binugi-android.apk
 
   windows:
     name: 윈도우
@@ -72,10 +87,18 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter build windows --release
+      - name: 설치 파일 만들기
+        shell: pwsh
+        run: |
+          $ver = (Select-String -Path pubspec.yaml -Pattern '^version:\s*([0-9.]+)').Matches[0].Groups[1].Value
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
+          & $iscc "/DAppVersion=$ver" installer\windows.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
       - uses: actions/upload-artifact@v4
         with:
-          name: 윈도우-앱
-          path: build/windows/x64/runner/Release
+          name: 윈도우-설치파일
+          path: dist/binugi-windows-setup.exe
 
   macos:
     name: 맥
@@ -96,3 +119,41 @@ jobs:
         with:
           name: 맥-앱
           path: binugi-macos.zip
+
+  release:
+    name: 새 버전 올리기 (Releases)
+    needs: [test, android, windows, macos]
+    # main에 올라간 커밋 메시지에 "[배포]"가 있거나, 직접 실행(workflow_dispatch)했을 때만 새 버전을 올림
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[배포]')))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 버전 읽기
+        id: v
+        run: |
+          VER=$(grep -E '^version:' pubspec.yaml | sed -E 's/version:\s*([0-9.]+).*/\1/')
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VER" >/dev/null; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; fi
+          # CHANGELOG.md에서 이 버전 부분만 뽑아 바뀐 내용으로
+          awk -v v="## $VER" '$0==v{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md
+          printf "\n\n설치 방법: 받은 파일로 덮어쓰기 설치하면 물건·사진·설정이 그대로 남아요.\n" >> notes.md
+      - uses: actions/download-artifact@v4
+        if: steps.v.outputs.exists == 'false'
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        if: steps.v.outputs.exists == 'false'
+        with:
+          tag_name: v${{ steps.v.outputs.version }}
+          name: 비우기 비서 ${{ steps.v.outputs.version }}
+          body_path: notes.md
+          files: |
+            dist/binugi-android.apk
+            dist/binugi-windows-setup.exe
+            dist/binugi-macos.zip
+            dist/binugi-linux.tar.gz

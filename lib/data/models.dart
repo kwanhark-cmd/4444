@@ -90,6 +90,7 @@ class Item {
   DateTime? discardDoneAt;
   bool digitalKeep;
   DateTime? exportedAt;
+  bool isPractice; // 연습 모드 결과로 만든 물건
 
   Item({
     this.id,
@@ -130,6 +131,7 @@ class Item {
     this.discardDoneAt,
     this.digitalKeep = false,
     this.exportedAt,
+    this.isPractice = false,
   });
 
   bool get isDone => (decision == Decision.sell && saleStatus == SaleStatus.sold) || (decision == Decision.discard && discardDoneAt != null);
@@ -173,6 +175,7 @@ class Item {
     'discard_done_at': _ms(discardDoneAt),
     'digital_keep': digitalKeep ? 1 : 0,
     'exported_at': _ms(exportedAt),
+    'is_practice': isPractice ? 1 : 0,
   };
 
   factory Item.fromMap(Map<String, Object?> m) => Item(
@@ -214,6 +217,7 @@ class Item {
     discardDoneAt: _dt(m['discard_done_at']),
     digitalKeep: (m['digital_keep'] as int? ?? 0) == 1,
     exportedAt: _dt(m['exported_at']),
+    isPractice: (m['is_practice'] as int? ?? 0) == 1,
   );
 
   Item copy() => Item.fromMap(toMap());
@@ -273,7 +277,18 @@ class DetectedItem {
   String reason;
   bool selected;
   String? framePath; // 영상에서 뽑은 장면
-  DetectedItem({required this.name, this.kind = '', this.condition = '', this.suggestion, this.reason = '', this.selected = true, this.framePath});
+  bool practice; // 연습 모드 결과
+  final String originalName; // AI가 처음 붙인 이름
+  DetectedItem({
+    required this.name,
+    this.kind = '',
+    this.condition = '',
+    this.suggestion,
+    this.reason = '',
+    this.selected = true,
+    this.framePath,
+    this.practice = false,
+  }) : originalName = name;
 }
 
 class ProgressStats {

@@ -5,9 +5,11 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   fc_native_video_thumbnail
   file_selector_windows
+  flutter_secure_storage_windows
   flutter_timezone
   flutter_tts
   speech_to_text_windows
+  url_launcher_windows
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

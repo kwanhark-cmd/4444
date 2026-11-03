@@ -12,6 +12,8 @@ import '../../services/media_picker.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/report.dart';
+import '../widgets/update_card.dart';
 import 'onboarding_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -97,6 +99,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(AppSizes.page),
         children: [
+          // ---------- 맨 위: 업데이트 · 문제 신고 ----------
+          const UpdateCard(),
+          BigButton(label: '문제 신고 (기록 보내기)', emoji: 'warning', color: p.attention, textColor: p.onAttention, onTap: reportProblem),
+          const SizedBox(height: AppSizes.cardGap),
           // ---------- 사용자 ----------
           const SectionTitle('사용자'),
           Panel(

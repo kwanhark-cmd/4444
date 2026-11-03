@@ -50,6 +50,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
           photo: b.photo,
           suggestion: d.suggestion,
           reason: d.reason,
+          // 연습 결과 이름을 그대로 쓰면 연습 물건 (실제 물건이 생기면 자동 숨김)
+          isPractice: d.practice && d.name.trim() == d.originalName.trim(),
         );
         n++;
       }

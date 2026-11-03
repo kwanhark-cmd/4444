@@ -1,7 +1,7 @@
 import 'package:sqflite_common/sqlite_api.dart';
 
 /// 데이터 버전. 올릴 때마다 _migrations 에 변환 단계를 추가합니다.
-const int dataVersion = 2;
+const int dataVersion = 3;
 
 const _v1 = [
   '''CREATE TABLE users(
@@ -49,7 +49,10 @@ const _v2 = [
     user_id INTEGER NOT NULL, spot TEXT NOT NULL, path TEXT NOT NULL, taken_at INTEGER NOT NULL)''',
 ];
 
-const Map<int, List<String>> migrations = {1: _v1, 2: _v2};
+// 버전 3: 연습 모드로 만든 물건 표시 (실제 물건이 생기면 자동 숨김)
+const _v3 = ['ALTER TABLE items ADD COLUMN is_practice INTEGER DEFAULT 0'];
+
+const Map<int, List<String>> migrations = {1: _v1, 2: _v2, 3: _v3};
 
 Future<void> _runFrom(Database db, int from, int to) async {
   for (var v = from + 1; v <= to; v++) {
@@ -64,4 +67,15 @@ Future<Database> openAppDatabase(DatabaseFactory factory, String path, {int vers
     path,
     options: OpenDatabaseOptions(version: version, onCreate: (db, v) => _runFrom(db, 0, v), onUpgrade: (db, oldV, newV) => _runFrom(db, oldV, newV)),
   );
+}
+
+/// 변환 없이 지금 자료 버전만 읽기 (파일이 없으면 null)
+Future<int?> peekVersion(DatabaseFactory factory, String path) async {
+  if (!await factory.databaseExists(path)) return null;
+  final db = await factory.openDatabase(path, options: OpenDatabaseOptions(readOnly: true, singleInstance: false));
+  try {
+    return await db.getVersion();
+  } finally {
+    await db.close();
+  }
 }

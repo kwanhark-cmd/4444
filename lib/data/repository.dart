@@ -58,9 +58,15 @@ class Repository {
     return r.isEmpty ? null : Item.fromMap(r.first);
   }
 
-  Future<List<Item>> items(int userId, {Decision? decision, bool undecidedOnly = false, String? search}) async {
+  /// 실제(연습이 아닌) 물건이 하나라도 있는지
+  Future<bool> hasRealItems(int userId) async =>
+      (await db.query('items', columns: ['id'], where: 'user_id=? AND (is_practice IS NULL OR is_practice=0)', whereArgs: [userId], limit: 1)).isNotEmpty;
+
+  /// 연습 물건은 실제 물건이 하나라도 등록되면 자동으로 숨깁니다.
+  Future<List<Item>> items(int userId, {Decision? decision, bool undecidedOnly = false, String? search, bool includePractice = false}) async {
     final where = <String>['user_id=?'];
     final args = <Object?>[userId];
+    if (!includePractice && await hasRealItems(userId)) where.add('(is_practice IS NULL OR is_practice=0)');
     if (undecidedOnly) {
       where.add('decision IS NULL');
     } else if (decision != null) {
@@ -154,7 +160,19 @@ class Repository {
   // ---------- 백업용 전체 내보내기/가져오기 ----------
   static const backupTables = ['users', 'settings', 'items', 'notices', 'costs', 'timelapse'];
 
-  Future<Map<String, List<Map<String, Object?>>>> dumpAll() async => {for (final t in backupTables) t: await db.query(t)};
+  Future<Map<String, List<Map<String, Object?>>>> dumpAll() async {
+    final out = <String, List<Map<String, Object?>>>{};
+    for (final t in backupTables) {
+      try {
+        out[t] = await db.query(t);
+      } catch (_) {
+        out[t] = []; // 오래된 자료 버전에는 없는 표
+      }
+    }
+    return out;
+  }
+
+  Future<int> deletePracticeItems(int userId) => db.delete('items', where: 'user_id=? AND is_practice=1', whereArgs: [userId]);
 
   Future<void> restoreAll(Map<String, List<Map<String, Object?>>> data) async {
     await db.transaction((t) async {

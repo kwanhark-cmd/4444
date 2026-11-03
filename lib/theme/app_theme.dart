@@ -95,7 +95,7 @@ class AppPalette {
     attention: Color(0xFFFFD54F),
     onAttention: Color(0xFF212121),
     background: Color(0xFF121212),
-    surface: Color(0xFF1F1F1F),
+    surface: Color(0xFF262A30),
     onSurface: Color(0xFFF0F0F0),
     muted: Color(0xFFBDBDBD),
     shadow: Color(0x66000000),
@@ -123,11 +123,59 @@ class AppPalette {
     brightness: Brightness.light,
   );
 
-  static AppPalette of(ThemeModeChoice m) => switch (m) {
-    ThemeModeChoice.light => light,
-    ThemeModeChoice.dark => dark,
-    ThemeModeChoice.highContrast => highContrast,
-  };
+  static AppPalette of(ThemeModeChoice m, [String colorTheme = 'ocean']) {
+    final base = switch (m) {
+      ThemeModeChoice.light => light,
+      ThemeModeChoice.dark => dark,
+      ThemeModeChoice.highContrast => highContrast,
+    };
+    if (m == ThemeModeChoice.highContrast) return base; // 고대비는 색 테마 없이 고정
+    final c = colorThemes[colorTheme] ?? colorThemes['ocean']!;
+    return base.withPrimary(m == ThemeModeChoice.dark ? c.dark : c.light, onDark: m == ThemeModeChoice.dark);
+  }
+
+  AppPalette withPrimary(Color p, {required bool onDark}) => AppPalette(
+    primary: p,
+    onPrimary: onDark ? const Color(0xFF0D1B2E) : Colors.white,
+    accent: accent,
+    onAccent: onAccent,
+    use: use,
+    sell: sell,
+    discard: discard,
+    progress: progress,
+    attention: attention,
+    onAttention: onAttention,
+    background: background,
+    surface: surface,
+    onSurface: onSurface,
+    muted: muted,
+    shadow: shadow,
+    border: border,
+    brightness: brightness,
+  );
+}
+
+/// 색 테마 (주요색만 바뀜. 분류색 파랑·초록·빨강, 상태색 보라·노랑은 고정)
+class ColorTheme {
+  final String label;
+  final Color light;
+  final Color dark;
+  const ColorTheme(this.label, this.light, this.dark);
+}
+
+const colorThemes = <String, ColorTheme>{
+  'ocean': ColorTheme('바다 (남색)', Color(0xFF2B4C7E), Color(0xFF9EC1F7)),
+  'earth': ColorTheme('흙 (갈색)', Color(0xFF5D4037), Color(0xFFD7B9A8)),
+  'slate': ColorTheme('먹 (회청색)', Color(0xFF37474F), Color(0xFFB0BEC5)),
+  'lake': ColorTheme('호수 (청록)', Color(0xFF00576B), Color(0xFF8ED3E3)),
+};
+
+/// 글자 위계 4단계: 큰 숫자 > 제목 > 본문 > 설명
+class AppText {
+  static const double display = 34; // 큰 숫자 (현황)
+  static const double title = 22; // 화면·카드 제목
+  static const double body = 17; // 본문
+  static const double caption = 14.5; // 작은 설명
 }
 
 /// 크기·간격·둥글기
@@ -139,6 +187,7 @@ class AppSizes {
   static const double gap = 16;
   static const double gapSmall = 8;
   static const double gapLarge = 24;
+  static const double cardGap = 24; // 카드 사이 간격 (기본 간격의 1.5배)
   static const double page = 16;
   static const double captureButton = 84;
   static const double tileIcon = 56;
@@ -160,6 +209,9 @@ class AppMotion {
 
 /// 그림자(입체감). 메인 타일과 주요 버튼에만 사용.
 class AppShadows {
+  /// 일반 카드용 부드러운 그림자 (가벼움)
+  static List<BoxShadow> soft(AppPalette p) => [BoxShadow(color: p.shadow.withValues(alpha: 0.12), blurRadius: 12, offset: const Offset(0, 4))];
+
   static List<BoxShadow> raised(AppPalette p, {bool pressed = false}) => pressed
       ? [BoxShadow(color: p.shadow, blurRadius: 2, offset: const Offset(0, 1))]
       : [
@@ -172,9 +224,10 @@ class AppShadows {
 class AppThemeExt extends ThemeExtension<AppThemeExt> {
   final AppPalette palette;
   final AppMotion motion;
-  const AppThemeExt(this.palette, this.motion);
+  final bool highContrast;
+  const AppThemeExt(this.palette, this.motion, {this.highContrast = false});
   @override
-  AppThemeExt copyWith({AppPalette? palette, AppMotion? motion}) => AppThemeExt(palette ?? this.palette, motion ?? this.motion);
+  AppThemeExt copyWith({AppPalette? palette, AppMotion? motion}) => AppThemeExt(palette ?? this.palette, motion ?? this.motion, highContrast: highContrast);
   @override
   AppThemeExt lerp(covariant AppThemeExt? other, double t) => other ?? this;
 }
@@ -186,8 +239,8 @@ extension AppThemeContext on BuildContext {
 
 const String appFont = 'NotoSansKR';
 
-ThemeData buildTheme(ThemeModeChoice mode, {bool reduceMotion = false}) {
-  final p = AppPalette.of(mode);
+ThemeData buildTheme(ThemeModeChoice mode, {bool reduceMotion = false, String colorTheme = 'ocean'}) {
+  final p = AppPalette.of(mode, colorTheme);
   final scheme = ColorScheme(
     brightness: p.brightness,
     primary: p.primary,
@@ -203,10 +256,12 @@ ThemeData buildTheme(ThemeModeChoice mode, {bool reduceMotion = false}) {
   final text = base.textTheme
       .apply(bodyColor: p.onSurface, displayColor: p.onSurface, fontFamily: appFont)
       .copyWith(
+        displaySmall: base.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w800, color: p.onSurface, fontSize: AppText.display),
         headlineMedium: base.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700, color: p.onSurface, fontSize: 26),
-        titleLarge: base.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700, color: p.onSurface, fontSize: 22),
+        titleLarge: base.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700, color: p.onSurface, fontSize: AppText.title),
         titleMedium: base.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: p.onSurface, fontSize: 18),
-        bodyLarge: base.textTheme.bodyLarge?.copyWith(color: p.onSurface, fontSize: 18),
+        bodyLarge: base.textTheme.bodyLarge?.copyWith(color: p.onSurface, fontSize: AppText.body),
+        bodySmall: base.textTheme.bodySmall?.copyWith(color: p.muted, fontSize: AppText.caption),
         bodyMedium: base.textTheme.bodyMedium?.copyWith(color: p.onSurface, fontSize: 16),
       );
   final buttonShape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radius));
@@ -214,7 +269,7 @@ ThemeData buildTheme(ThemeModeChoice mode, {bool reduceMotion = false}) {
   return base.copyWith(
     scaffoldBackgroundColor: p.background,
     textTheme: text,
-    extensions: [AppThemeExt(p, AppMotion(reduceMotion))],
+    extensions: [AppThemeExt(p, AppMotion(reduceMotion), highContrast: mode == ThemeModeChoice.highContrast)],
     appBarTheme: AppBarTheme(
       backgroundColor: p.background,
       foregroundColor: p.onSurface,

@@ -131,6 +131,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         final bytes = await s.images.readPhoto(photo.photoPath);
         final r = await s.ai.recognize(s.uid, s.user, bytes, width: photo.width, height: photo.height, hint: desc.text.trim());
         notice ??= r.message;
+        for (final d in r.value) {
+          d.practice = r.practice;
+        }
         batches.add(DetectionBatch(photo, r.value));
       } on AiException catch (e) {
         batches.add(DetectionBatch(photo, [DetectedItem(name: '', reason: '')], error: e.userMessage));

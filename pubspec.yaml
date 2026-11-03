@@ -1,7 +1,7 @@
 name: binugi
 description: "집안 물건 비우기 판매 폐기 비서"
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: ^3.13.0
@@ -34,6 +34,10 @@ dependencies:
   package_info_plus: 10.2.2
   uuid: 4.6.0
   fc_native_video_thumbnail: 4.0.0
+  flutter_secure_storage: 11.2.0
+  window_manager: 0.6.0
+  url_launcher: 6.3.3
+  open_filex: 5.0.0
 
 dev_dependencies:
   flutter_test:

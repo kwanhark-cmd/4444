@@ -13,9 +13,10 @@ import 'state/app_state.dart';
 import 'theme/app_theme.dart';
 import 'ui/screens/home_screen.dart';
 import 'ui/screens/import_screen.dart';
+import 'ui/keys.dart';
 import 'ui/screens/onboarding_screen.dart';
 
-final navKey = GlobalKey<NavigatorState>();
+export 'ui/keys.dart';
 
 class BinugiApp extends StatelessWidget {
   final AppState state;
@@ -33,6 +34,7 @@ class BinugiApp extends StatelessWidget {
       child: Consumer<AppState>(
         builder: (context, s, _) => MaterialApp(
           navigatorKey: navKey,
+          scaffoldMessengerKey: messengerKey,
           title: '집안 물건 비우기 판매 폐기 비서',
           debugShowCheckedModeBanner: false,
           theme: buildTheme(s.global.theme, reduceMotion: s.global.reduceMotion),

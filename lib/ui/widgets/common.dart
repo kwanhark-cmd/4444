@@ -7,7 +7,10 @@ import 'package:provider/provider.dart';
 
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../../core/logger.dart';
 import '../../theme/app_theme.dart';
+import '../keys.dart';
+import 'report.dart';
 
 /// 3D 이모지 그림 (assets/emoji/이름.png)
 class Emoji3D extends StatelessWidget {
@@ -451,14 +454,19 @@ class AppPage extends StatelessWidget {
 /// 위험한 동작은 2단계 확인
 Future<bool> confirmTwice(BuildContext context, {required String title, required String first, required String second, String okLabel = '네, 할게요'}) async {
   final a = await confirmOnce(context, title: title, message: first, okLabel: '다음', danger: true);
-  if (!a || !context.mounted) return false;
-  return confirmOnce(context, title: '정말 할까요?', message: second, okLabel: okLabel, danger: true);
+  final c = liveContext();
+  if (!a || c == null) return false;
+  // liveContext()가 살아 있는(mounted) 화면만 돌려주므로 안전
+  // ignore: use_build_context_synchronously
+  return confirmOnce(c, title: '정말 할까요?', message: second, okLabel: okLabel, danger: true);
 }
 
 Future<bool> confirmOnce(BuildContext context, {required String title, required String message, String okLabel = '확인', bool danger = false}) async {
-  final p = context.palette;
+  final c = liveContext(context);
+  if (c == null) return false;
+  final p = c.palette;
   final r = await showDialog<bool>(
-    context: context,
+    context: c,
     builder: (ctx) => AlertDialog(
       title: Text(title),
       content: SingleChildScrollView(child: Text(message, style: const TextStyle(fontSize: 18))),
@@ -478,8 +486,12 @@ Future<bool> confirmOnce(BuildContext context, {required String title, required 
   return r ?? false;
 }
 
-void toast(BuildContext context, String msg, {String? actionLabel, VoidCallback? onAction}) {
-  final m = ScaffoldMessenger.of(context);
+void toast(BuildContext context, String msg, {String? actionLabel, VoidCallback? onAction}) => showMessage(msg, actionLabel: actionLabel, onAction: onAction);
+
+/// 화면 아래 알림줄. context 없이 앱 전체 알림줄을 써서 화면이 사라져도 안전.
+void showMessage(String msg, {String? actionLabel, VoidCallback? onAction}) {
+  final m = messengerKey.currentState;
+  if (m == null) return;
   m.hideCurrentSnackBar();
   m.showSnackBar(
     SnackBar(
@@ -490,11 +502,61 @@ void toast(BuildContext context, String msg, {String? actionLabel, VoidCallback?
   );
 }
 
+/// 실패 안내 창: 원인과 단계를 기록하고 "다시 시도"·"문제 신고"·"닫기"를 보여 줍니다.
+/// [stage]: 카메라 / 파일 / AI 인식 / 저장 / 지메일 / 업데이트 등
+Future<void> showFailure(
+  BuildContext? context, {
+  required String stage,
+  required String message,
+  Object? error,
+  StackTrace? stack,
+  Future<void> Function()? onRetry,
+  String? altLabel,
+  Future<void> Function()? onAlt,
+}) async {
+  log.error('[$stage] $message', error, stack);
+  final c = liveContext(context);
+  if (c == null) return;
+  final p = c.palette;
+  final choice = await showDialog<String>(
+    context: c,
+    builder: (ctx) => AlertDialog(
+      title: Row(
+        children: [
+          const Emoji3D('warning', size: 36),
+          const SizedBox(width: 8),
+          Expanded(child: Text('$stage 문제')),
+        ],
+      ),
+      content: SingleChildScrollView(child: Text(message, style: const TextStyle(fontSize: 18))),
+      actionsOverflowDirection: VerticalDirection.down,
+      actionsOverflowButtonSpacing: 8,
+      actions: [
+        if (onRetry != null) BigButton(label: '다시 시도', emoji: 'sparkle', color: p.primary, onTap: () => Navigator.pop(ctx, 'retry')),
+        if (onAlt != null) BigButton(label: altLabel ?? '다른 방법', color: p.progress, onTap: () => Navigator.pop(ctx, 'alt')),
+        BigButton(label: '문제 신고', emoji: 'warning', color: p.attention, textColor: p.onAttention, onTap: () => Navigator.pop(ctx, 'report')),
+        BigButton(label: '닫기', color: p.muted, onTap: () => Navigator.pop(ctx, 'close')),
+      ],
+    ),
+  );
+  // 창이 닫힌 뒤에는 처음 context가 사라졌을 수 있으므로 다음 동작은 context 없이 실행
+  switch (choice) {
+    case 'retry':
+      await onRetry?.call();
+    case 'alt':
+      await onAlt?.call();
+    case 'report':
+      await reportProblem();
+  }
+}
+
 /// 글자 입력 대화상자 (마이크가 없을 때 대신)
-Future<String?> askText(BuildContext context, {required String title, String hint = '', String initial = '', int lines = 1}) {
+Future<String?> askText(BuildContext context, {required String title, String hint = '', String initial = '', int lines = 1}) async {
+  final live = liveContext(context);
+  if (live == null) return null;
   final c = TextEditingController(text: initial);
   return showDialog<String>(
-    context: context,
+    context: live,
     builder: (ctx) => AlertDialog(
       title: Text(title),
       content: TextField(
@@ -681,22 +743,32 @@ class SectionTitle extends StatelessWidget {
 /// 카드 상자
 class Panel extends StatelessWidget {
   final Widget child;
-  final Color? border;
-  const Panel({super.key, required this.child, this.border});
+  final Color? border; // 강조색: 왼쪽 색 띠로 표시
+  final Color? fill; // 배경색 (기본: 카드색)
+  const Panel({super.key, required this.child, this.border, this.fill});
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    final hc = Theme.of(context).extension<AppThemeExt>()!.highContrast;
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSizes.gap),
+      padding: const EdgeInsets.only(bottom: AppSizes.cardGap),
       child: Material(
-        color: p.surface,
+        color: fill ?? p.surface,
+        elevation: 0,
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSizes.radius),
-          side: BorderSide(color: border ?? p.border, width: 2),
+          side: hc ? BorderSide(color: p.border, width: 2) : BorderSide.none,
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSizes.gap),
-          child: SizedBox(width: double.infinity, child: child),
+        clipBehavior: Clip.antiAlias,
+        child: DecoratedBox(
+          decoration: BoxDecoration(boxShadow: AppShadows.soft(p)),
+          child: Stack(
+            children: [
+              Padding(padding: EdgeInsets.fromLTRB(AppSizes.gap + (border != null ? 8 : 0), AppSizes.gap, AppSizes.gap, AppSizes.gap), child: child),
+              if (border != null) Positioned(left: 0, top: 0, bottom: 0, child: Container(width: 8, color: border)),
+            ],
+          ),
         ),
       ),
     );
