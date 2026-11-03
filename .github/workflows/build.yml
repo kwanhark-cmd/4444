@@ -63,7 +63,9 @@ jobs:
             echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.jks
             printf "storeFile=release.jks\nstorePassword=%s\nkeyAlias=binugi\nkeyPassword=%s\n" "$KEYSTORE_PASSWORD" "$KEYSTORE_PASSWORD" > android/key.properties
             echo "고정 서명 열쇠 사용"
+            echo fixed > signing-kind.txt
           else
+            echo temp > signing-kind.txt
             echo "::warning::ANDROID_KEYSTORE_BASE64 비밀 값이 없어 임시 열쇠로 서명합니다. 이 APK는 다음 버전으로 덮어쓰기 설치가 안 됩니다."
           fi
       - run: flutter pub get
@@ -72,7 +74,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: 안드로이드-APK
-          path: binugi-android.apk
+          path: |
+            binugi-android.apk
+            signing-kind.txt
 
   windows:
     name: 윈도우
@@ -137,18 +141,23 @@ jobs:
         run: |
           VER=$(grep -E '^version:' pubspec.yaml | sed -E 's/version:\s*([0-9.]+).*/\1/')
           echo "version=$VER" >> "$GITHUB_OUTPUT"
-          if git ls-remote --exit-code --tags origin "refs/tags/v$VER" >/dev/null; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; fi
           # CHANGELOG.md에서 이 버전 부분만 뽑아 바뀐 내용으로
           awk -v v="## $VER" '$0==v{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md
           printf "\n\n설치 방법: 받은 파일로 덮어쓰기 설치하면 물건·사진·설정이 그대로 남아요.\n" >> notes.md
       - uses: actions/download-artifact@v4
-        if: steps.v.outputs.exists == 'false'
         with:
           path: dist
           merge-multiple: true
+      - name: 임시 서명 APK는 올리지 않음 (덮어쓰기 업데이트가 안 되므로)
+        run: |
+          if [ "$(cat dist/signing-kind.txt 2>/dev/null)" != "fixed" ]; then
+            rm -f dist/binugi-android.apk
+            printf "\n안드로이드 설치 파일은 서명 열쇠를 등록한 뒤 이 화면에 추가돼요.\n" >> notes.md
+          fi
+      # 같은 버전이 이미 있으면 파일만 새로 바꿔 올림 (서명 열쇠 등록 후 다시 실행하면 APK가 추가됨)
       - uses: softprops/action-gh-release@v2
-        if: steps.v.outputs.exists == 'false'
         with:
+          fail_on_unmatched_files: false
           tag_name: v${{ steps.v.outputs.version }}
           name: 비우기 비서 ${{ steps.v.outputs.version }}
           body_path: notes.md

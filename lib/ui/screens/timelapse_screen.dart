@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -130,16 +131,25 @@ class _TimelapsePlayerState extends State<TimelapsePlayer> {
     super.dispose();
   }
 
-  Future<void> _make() async {
+  /// [kind]: gif / 세로 / 가로
+  Future<void> _make([String kind = 'gif']) async {
     final s = context.read<AppState>();
     setState(() => making = true);
     try {
-      final credits = await renderCredits(s.stats, widget.spot, s.currentUser?.name ?? '');
-      final f = await s.timelapse.makeGif(shots.map((e) => e.path).toList(), creditsPng: credits, spot: widget.spot);
-      if (mounted) toast(context, '1번 앱용 폴더에 저장했어요: ${f.path.split(RegExp(r'[\\/]')).last}');
+      final list = shots.map((e) => e.path).toList();
+      final File f;
+      if (kind == 'gif') {
+        final credits = await renderCredits(s.stats, widget.spot, s.currentUser?.name ?? '');
+        f = await s.timelapse.makeGif(list, creditsPng: credits, spot: widget.spot);
+      } else {
+        final portrait = kind == '세로';
+        final credits = await renderCredits(s.stats, widget.spot, s.currentUser?.name ?? '', width: portrait ? 720 : 1280, height: portrait ? 1280 : 720);
+        f = await s.timelapse.makeMp4(list, creditsPng: credits, spot: widget.spot, portrait: portrait);
+      }
+      showMessage('1번 앱용 폴더에 저장했어요: ${f.path.split(RegExp(r'[\\/]')).last}');
     } catch (e, st) {
       if (mounted) setState(() => making = false);
-      await showFailure(null, stage: '타임랩스', message: '타임랩스를 만들지 못했어요. 사진이 너무 많으면 몇 장을 지워 보세요.', error: e, stack: st, onRetry: _make);
+      await showFailure(null, stage: '타임랩스', message: '타임랩스를 만들지 못했어요. 사진이 너무 많으면 몇 장을 지워 보세요.', error: e, stack: st, onRetry: () => _make(kind));
       return;
     }
     if (mounted) setState(() => making = false);
@@ -179,7 +189,26 @@ class _TimelapsePlayerState extends State<TimelapsePlayer> {
           const SizedBox(height: AppSizes.gap),
           BigButton(label: '처음부터 다시 보기', emoji: 'video', color: p.progress, onTap: () => setState(_play)),
           const SizedBox(height: 8),
-          BigButton(label: making ? '만드는 중…' : '움직이는 그림으로 저장 (엔딩 크레딧 포함)', emoji: 'party', color: p.accent, onTap: making || shots.isEmpty ? null : _make),
+          if (making)
+            const Padding(
+              padding: EdgeInsets.all(8),
+              child: Column(children: [LinearProgressIndicator(), SizedBox(height: 6), Text('만드는 중이에요… 사진이 많으면 1분쯤 걸려요')]),
+            ),
+          Text('유튜브용 영상 (MP4, 엔딩 크레딧 포함)', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: BigButton(label: '세로 9:16', emoji: 'phone', color: p.accent, onTap: making || shots.isEmpty ? null : () => _make('세로')),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: BigButton(label: '가로 16:9', emoji: 'video', color: p.accent, onTap: making || shots.isEmpty ? null : () => _make('가로')),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          BigButton(label: '움직이는 그림(GIF)으로 저장', emoji: 'party', color: p.muted, onTap: making || shots.isEmpty ? null : () => _make('gif')),
         ],
       ),
     );
@@ -216,12 +245,13 @@ class _Credits extends StatelessWidget {
 }
 
 /// 엔딩 크레딧 그림 만들기 (한글 글꼴 사용)
-Future<Uint8List> renderCredits(ProgressStats? st, String spot, String userName) async {
-  const w = 480.0, h = 360.0;
+Future<Uint8List> renderCredits(ProgressStats? st, String spot, String userName, {double width = 480, double height = 360}) async {
+  final w = width, h = height;
+  final k = w < h ? w / 480 : h / 360; // 큰 영상은 글자도 크게
   final rec = ui.PictureRecorder();
   final c = Canvas(rec);
-  c.drawRect(const Rect.fromLTWH(0, 0, w, h), Paint()..color = Colors.black);
-  var y = 60.0;
+  c.drawRect(Rect.fromLTWH(0, 0, w, h), Paint()..color = Colors.black);
+  var y = h * 0.25;
   void line(String t, double size, Color color) {
     final tp = TextPainter(
       text: TextSpan(
@@ -230,9 +260,9 @@ Future<Uint8List> renderCredits(ProgressStats? st, String spot, String userName)
       ),
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.center,
-    )..layout(maxWidth: w - 40);
+    )..layout(maxWidth: w - 40 * k);
     tp.paint(c, Offset((w - tp.width) / 2, y));
-    y += tp.height + 14;
+    y += tp.height + 14 * k;
   }
 
   line('집 비우기 대작전', 30, Colors.white);

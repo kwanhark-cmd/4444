@@ -97,79 +97,90 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: SafeArea(
-        child: ListView(
-          key: const PageStorageKey('home_1'),
-          padding: const EdgeInsets.fromLTRB(AppSizes.page, 4, AppSizes.page, AppSizes.cardGap),
-          children: [
-            if (s.unread.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppSizes.gap),
-                child: BigButton(
-                  label: '밀린 알림 ${s.unread.length}개 보기',
-                  emoji: 'bell',
-                  color: p.attention,
-                  textColor: p.onAttention,
-                  onTap: () => go(context, const NoticesScreen()),
-                ),
-              ),
-            const FirstTimeTip(id: 'home', text: '맨 위 "오늘 할 일"에서 하루에 물건 하나만 정하면 돼요. 아래 큰 동그라미 버튼으로 물건을 찍어 등록해요.'),
-            // 1) 주인공: 오늘 할 일
-            TodayHero(item: s.today),
-            const SizedBox(height: AppSizes.cardGap),
-            // 2) 숫자 띠
-            StatStrip(
-              stats: [('${st?.done ?? 0}개', '비운 물건'), (won(st?.income ?? 0), '판매 수입'), ('${st?.undecided ?? 0}개', '아직 안 정함')],
-              onTap: () => go(context, const ProgressScreen()),
-            ),
-            const SizedBox(height: AppSizes.cardGap),
-            // 3) 분류별 타일 3개 (색이 모두 다름)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        child: LayoutBuilder(
+          builder: (context, box) {
+            // 넓은 화면(컴퓨터)에서는 가운데 720px 폭으로 (사진이 너무 커지지 않게)
+            final side = box.maxWidth > 752 ? (box.maxWidth - 720) / 2 : AppSizes.page;
+            return ListView(
+              key: const PageStorageKey('home_1'),
+              padding: EdgeInsets.fromLTRB(side, 4, side, AppSizes.cardGap),
               children: [
-                Expanded(
-                  child: CategoryTile(
-                    decision: Decision.use,
-                    count: '${st?.use ?? 0}',
-                    sub: '두고 쓸 물건',
-                    onTap: () => go(context, const ItemListScreen(initial: Decision.use)),
+                if (s.unread.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSizes.gap),
+                    child: BigButton(
+                      label: '밀린 알림 ${s.unread.length}개 보기',
+                      emoji: 'bell',
+                      color: p.attention,
+                      textColor: p.onAttention,
+                      onTap: () => go(context, const NoticesScreen()),
+                    ),
                   ),
+                const FirstTimeTip(id: 'home', text: '맨 위 "오늘 할 일"에서 하루에 물건 하나만 정하면 돼요. 아래 큰 동그라미 버튼으로 물건을 찍어 등록해요.'),
+                // 1) 주인공: 오늘 할 일
+                TodayHero(item: s.today),
+                const SizedBox(height: AppSizes.cardGap),
+                // 2) 숫자 띠
+                StatStrip(
+                  stats: [('${st?.done ?? 0}개', '비운 물건'), (won(st?.income ?? 0), '판매 수입'), ('${st?.undecided ?? 0}개', '아직 안 정함')],
+                  onTap: () => go(context, const ProgressScreen()),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: CategoryTile(decision: Decision.sell, count: '${st?.sell ?? 0}', sub: '판매글 만들기', onTap: () => go(context, const SellScreen())),
+                const SizedBox(height: AppSizes.cardGap),
+                // 3) 분류별 타일 3개 (색이 모두 다름)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: CategoryTile(
+                        decision: Decision.use,
+                        count: '${st?.use ?? 0}',
+                        sub: '두고 쓸 물건',
+                        onTap: () => go(context, const ItemListScreen(initial: Decision.use)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: CategoryTile(decision: Decision.sell, count: '${st?.sell ?? 0}', sub: '판매글 만들기', onTap: () => go(context, const SellScreen())),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: CategoryTile(
+                        decision: Decision.discard,
+                        count: '${st?.discard ?? 0}',
+                        sub: '버리는 방법',
+                        onTap: () => go(context, const DiscardScreen()),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: CategoryTile(decision: Decision.discard, count: '${st?.discard ?? 0}', sub: '버리는 방법', onTap: () => go(context, const DiscardScreen())),
+                const SizedBox(height: AppSizes.cardGap),
+                // 4) 보조 행동 (작게)
+                if ((st?.undecided ?? 0) > 1)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSizes.gap),
+                    child: BigButton(
+                      label: '밀어서 정리하기 (${st!.undecided}개 남음)',
+                      emoji: 'clipboard',
+                      color: p.progress,
+                      onTap: () => go(context, const ClassifyScreen()),
+                    ),
+                  ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _link(context, 'package', '모든 물건 ${st?.total ?? 0}개', const ItemListScreen()),
+                    _link(context, 'chart', '진행 현황', const ProgressScreen()),
+                    _link(context, 'video', '타임랩스', const TimelapseScreen()),
+                    _link(context, 'speech', '정리 글 가져오기', const ImportScreen()),
+                    _link(context, 'camera', '물건 등록', const RegisterScreen()),
+                  ],
                 ),
+                const SizedBox(height: AppSizes.cardGap),
+                StatusChips(onTap: () => go(context, const SettingsScreen())),
               ],
-            ),
-            const SizedBox(height: AppSizes.cardGap),
-            // 4) 보조 행동 (작게)
-            if ((st?.undecided ?? 0) > 1)
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppSizes.gap),
-                child: BigButton(
-                  label: '밀어서 정리하기 (${st!.undecided}개 남음)',
-                  emoji: 'clipboard',
-                  color: p.progress,
-                  onTap: () => go(context, const ClassifyScreen()),
-                ),
-              ),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _link(context, 'package', '모든 물건 ${st?.total ?? 0}개', const ItemListScreen()),
-                _link(context, 'chart', '진행 현황', const ProgressScreen()),
-                _link(context, 'video', '타임랩스', const TimelapseScreen()),
-                _link(context, 'speech', '정리 글 가져오기', const ImportScreen()),
-                _link(context, 'camera', '물건 등록', const RegisterScreen()),
-              ],
-            ),
-            const SizedBox(height: AppSizes.cardGap),
-            StatusChips(onTap: () => go(context, const SettingsScreen())),
-          ],
+            );
+          },
         ),
       ),
       // 촬영 버튼은 화면 아래 가운데 고정 띠에 (내용을 가리지 않음)
