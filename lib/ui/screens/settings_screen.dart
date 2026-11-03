@@ -526,13 +526,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
             '정보 창 왼쪽 위 작은 아이콘을 누르고 ⌘+V (붙여넣기)',
             '창을 닫으면 끝! (Dock의 아이콘도 바뀌어요)',
           ];
-    await confirmOnce(
-      context,
-      title: '바로가기 아이콘 바꾸는 법',
-      message: '${[for (var i = 0; i < steps.length; i++) '${i + 1}. ${steps[i]}'].join('\n')}\n\n아이콘 파일 위치(복사됨):\n${dir.path}',
-      okLabel: '알겠어요',
-    );
     await Clipboard.setData(ClipboardData(text: dir.path));
+    if (!mounted) return;
+    final p = context.palette;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('바로가기 아이콘 바꾸는 법'),
+        content: SizedBox(
+          width: 520,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.memory(bytes, width: 72, height: 72, fit: BoxFit.cover),
+                    ),
+                    const SizedBox(width: 10),
+                    const Icon(Icons.arrow_forward_rounded, size: 32),
+                    const SizedBox(width: 10),
+                    Emoji3D(Platform.isWindows ? 'gear' : 'folder', size: 56),
+                    const SizedBox(width: 10),
+                    const Expanded(child: Text('이 그림을 바로가기 아이콘으로', style: TextStyle(fontSize: 16))),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                StepList(steps, color: p.accent),
+                const SizedBox(height: 8),
+                Text('아이콘 파일 위치 (복사됨):\n${dir.path}', style: Theme.of(ctx).textTheme.bodySmall),
+              ],
+            ),
+          ),
+        ),
+        actions: [BigButton(label: '알겠어요', expand: false, onTap: () => Navigator.pop(ctx))],
+      ),
+    );
   }
 
   Future<void> _cleanupPhotos() async {

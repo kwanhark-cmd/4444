@@ -8,6 +8,7 @@ import '../../services/knowledge.dart';
 import '../../services/voice_commands.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../keys.dart';
 import '../widgets/celebrate.dart';
 import '../widgets/common.dart';
 import 'home_screen.dart';
@@ -78,8 +79,10 @@ class _ClassifyScreenState extends State<ClassifyScreen> with SingleTickerProvid
   Future<void> _help(Item item) async {
     final answers = <bool>[];
     for (final q in helpQuestions) {
+      final live = liveContext(mounted ? context : null);
+      if (live == null) return;
       final a = await showDialog<bool>(
-        context: context,
+        context: live,
         builder: (ctx) => AlertDialog(
           title: const Text('결정 도우미'),
           content: Column(
