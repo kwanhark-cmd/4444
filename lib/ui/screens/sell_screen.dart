@@ -8,6 +8,7 @@ import '../../services/sale_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/celebrate.dart';
+import '../../services/market_links.dart';
 import '../widgets/common.dart';
 import 'home_screen.dart';
 
@@ -28,29 +29,12 @@ class SellScreen extends StatelessWidget {
                 child: EmptyState(message: '판매로 정한 물건이 아직 없어요.\n"정리하기"에서 판매를 골라 보세요.', mood: MascotMood.thinking),
               ),
             )
-          : ListView(
-              key: const PageStorageKey('sell_1'),
-              padding: const EdgeInsets.all(AppSizes.page),
-              children: [
-                const FirstTimeTip(id: 'sell', text: '판매글을 만들어 "복사"한 뒤, 당근마켓이나 번개장터 앱에 직접 붙여넣어 올리세요. 이 앱은 대신 올리지 않아요.'),
-                for (final it in list) ...[
-                  ItemCard(
-                    it,
-                    onTap: () => go(context, SellDetailScreen(itemId: it.id!)),
-                    trailing: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(won(it.price), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-                          if (s.sales.suggestedDrop(it, s.user, at: s.now) != null) Chip3('인하 추천', p.attention, textColor: p.onAttention),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                ],
-              ],
+          : ItemGrid(
+              storageKey: 'sell_1',
+              items: list,
+              header: const FirstTimeTip(id: 'sell', text: '판매글을 만들어 "복사"한 뒤, 당근마켓이나 번개장터 앱에 직접 붙여넣어 올리세요. 이 앱은 대신 올리지 않아요.'),
+              onTap: (it) => go(context, SellDetailScreen(itemId: it.id!)),
+              trailing: (it) => s.sales.suggestedDrop(it, s.user, at: s.now) != null ? Chip3('인하 추천', p.attention, textColor: p.onAttention) : null,
             ),
     );
   }
@@ -274,17 +258,51 @@ class _SellDetailScreenState extends State<SellDetailScreen> {
             decoration: const InputDecoration(labelText: '설명'),
             onChanged: (_) => setState(() {}),
           ),
-          const SizedBox(height: 8),
-          BigButton(
-            label: '판매글 전체 복사',
-            emoji: 'clipboard',
-            color: p.sell,
-            onTap: () {
-              _saveFields();
-              _copy(all, '판매글');
-            },
+          const SizedBox(height: AppSizes.gap),
+          // 행동형 카드: 크게 복사 → 바로 앱 열기
+          Panel(
+            fill: Color.alphaBlend(p.sell.withValues(alpha: 0.12), p.surface),
+            border: p.sell,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('1. 판매글 복사하기', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                BigButton(
+                  label: '판매글 전체 복사',
+                  emoji: 'clipboard',
+                  color: p.sell,
+                  onTap: () {
+                    _saveFields();
+                    _copy(all, '판매글');
+                  },
+                ),
+                const SizedBox(height: AppSizes.gap),
+                Text('2. 앱을 열고 붙여넣기', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    for (final m in Market.values) ...[
+                      if (m != Market.values.first) const SizedBox(width: 8),
+                      Expanded(
+                        child: BigButton(
+                          label: '${m.label} 열기',
+                          emoji: 'link',
+                          color: m == Market.daangn ? const Color(0xFFB34700) : const Color(0xFFB71C1C),
+                          onTap: () async {
+                            final ok = await openMarket(m);
+                            if (!ok) await showFailure(null, stage: '판매', message: '${m.label}을(를) 열지 못했어요. 앱이나 인터넷 연결을 확인해 주세요.');
+                          },
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text('이 앱은 글을 대신 올리지 않아요. 열린 앱에서 직접 붙여넣어 올려 주세요.', style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
           ),
-          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
@@ -309,7 +327,7 @@ class _SellDetailScreenState extends State<SellDetailScreen> {
               _saveFields();
             },
           ),
-          if (showShipping) const Panel(child: Text(shippingGuide, style: TextStyle(fontSize: 17, height: 1.5))),
+          if (showShipping) Panel(child: StepList(splitSteps(shippingGuide).skip(1).toList(), color: p.sell)),
           const SizedBox(height: 40),
         ],
       ),

@@ -5,6 +5,7 @@ import 'package:binugi/state/app_state.dart';
 import 'package:binugi/theme/app_theme.dart';
 import 'package:binugi/ui/screens/classify_screen.dart';
 import 'package:binugi/ui/screens/discard_screen.dart';
+import 'package:binugi/ui/screens/home_screen.dart';
 import 'package:binugi/ui/screens/import_screen.dart';
 import 'package:binugi/ui/screens/item_detail_screen.dart';
 import 'package:binugi/ui/screens/item_list_screen.dart';
@@ -118,6 +119,8 @@ Map<String, Widget Function(Ctx)> screens = {
   '가져오기': (c) => const ImportScreen(initialText: '- 커피 머신: 판매 (잘 작동함)\n- 아주 오래되고 낡은 나무 의자 → 폐기'),
 };
 
+Finder sellButton() => find.byWidgetPredicate((w) => w is Semantics && w.properties.button == true && w.properties.label == '판매');
+
 void main() {
   final configs = <(String, Size, ThemeModeChoice, TextSizeChoice)>[
     ('가장 작은 화면·가장 큰 글씨·밝게', const Size(360, 640), ThemeModeChoice.light, TextSizeChoice.huge),
@@ -172,8 +175,8 @@ void main() {
     addTearDown(tester.view.reset);
     final c = await seed(tester);
     await pumpApp(tester, c, theme: ThemeModeChoice.light, text: TextSizeChoice.normal, reduce: true);
-    await tester.ensureVisible(find.widgetWithText(DecisionButton, '판매').first);
-    await tester.tap(find.widgetWithText(DecisionButton, '판매').first);
+    await tester.ensureVisible(sellButton().first);
+    await tester.tap(sellButton().first);
     for (var i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 10));
     }
@@ -188,8 +191,8 @@ void main() {
     addTearDown(tester.view.reset);
     final c = await seed(tester);
     await pumpApp(tester, c, theme: ThemeModeChoice.light, text: TextSizeChoice.normal);
-    await tester.ensureVisible(find.widgetWithText(DecisionButton, '판매').first);
-    await tester.tap(find.widgetWithText(DecisionButton, '판매').first);
+    await tester.ensureVisible(sellButton().first);
+    await tester.tap(sellButton().first);
     for (var i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 10));
     }
@@ -214,5 +217,55 @@ void main() {
       final box = e.renderObject as RenderBox;
       expect(box.size.height, greaterThanOrEqualTo(AppSizes.buttonMinHeight));
     }
+  });
+
+  testWidgets('가장 먼저 눈에 띄는 것이 가장 중요한 것: 오늘 할 일이 맨 위에 가장 크게', (tester) async {
+    tester.view.physicalSize = const Size(390, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final c = await seed(tester);
+    await pumpApp(tester, c, theme: ThemeModeChoice.light, text: TextSizeChoice.normal);
+    await settle(tester);
+    final hero = tester.getRect(find.byType(TodayHero));
+    final strip = tester.getRect(find.byType(StatStrip));
+    final tiles = find.byType(CategoryTile).evaluate().map((e) => tester.getRect(find.byWidget(e.widget))).toList();
+    expect(tiles.length, 3);
+    expect(hero.top, lessThan(strip.top), reason: '오늘 할 일이 숫자 띠보다 위');
+    expect(strip.top, lessThan(tiles.first.top), reason: '숫자 띠 다음에 분류 타일');
+    final area = hero.width * hero.height;
+    for (final r in [strip, ...tiles]) {
+      expect(area, greaterThan(r.width * r.height * 2), reason: '오늘 할 일이 다른 카드보다 훨씬 큼');
+    }
+    expect(hero.width, closeTo(390 - 32, 1), reason: '화면 폭 전체');
+    // 분류 타일 3개는 색이 서로 다름 (같은 상자 나란히 금지의 예외)
+    final colors = find.byType(CategoryTile).evaluate().map((e) => (e.widget as CategoryTile).decision).toSet();
+    expect(colors.length, 3);
+  });
+
+  testWidgets('성능: 앱 준비와 첫 화면 그리기 시간 측정', (tester) async {
+    late Duration open;
+    late Ctx c;
+    await tester.runAsync(() async {
+      final sw = Stopwatch()..start();
+      c = Ctx();
+      final (s, _) = await makeState();
+      c.s = s;
+      for (var i = 0; i < 60; i++) {
+        await s.addItem(name: '물건 $i');
+      }
+      s.global.onboarded = true;
+      final sw2 = Stopwatch()..start();
+      await s.startup();
+      open = sw2.elapsed;
+      sw.stop();
+    });
+    final sw = Stopwatch()..start();
+    await tester.pumpWidget(BinugiApp(state: c.s, picker: FakePicker(), listenShares: false));
+    await tester.pump();
+    final firstFrame = sw.elapsed;
+    // ignore: avoid_print
+    print('성능 측정: 자료 준비(물건 60개) ${open.inMilliseconds}ms, 첫 화면 ${firstFrame.inMilliseconds}ms');
+    expect(open.inMilliseconds, lessThan(3000));
+    expect(firstFrame.inMilliseconds, lessThan(3000));
   });
 }

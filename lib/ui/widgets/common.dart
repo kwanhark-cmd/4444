@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../data/models.dart';
 import '../../state/app_state.dart';
+import '../../core/format.dart';
 import '../../core/logger.dart';
 import '../../theme/app_theme.dart';
 import '../keys.dart';
@@ -105,11 +106,7 @@ class Tile3D extends StatelessWidget {
           boxShadow: AppShadows.raised(p, pressed: pressed),
         ),
         child: Container(
-          decoration: BoxDecoration(
-            color: p.surface,
-            borderRadius: BorderRadius.circular(AppSizes.radius),
-            border: Border.all(color: color.withValues(alpha: 0.5), width: 2),
-          ),
+          decoration: BoxDecoration(color: p.surface, borderRadius: BorderRadius.circular(AppSizes.radius)),
           padding: const EdgeInsets.all(AppSizes.gap),
           child: Row(
             children: [
@@ -224,39 +221,77 @@ class DecisionButton extends StatelessWidget {
   Widget build(BuildContext context) => BigButton(label: decision.label, emoji: decision.emoji, color: decisionColor(context, decision), onTap: onTap);
 }
 
-/// 분류 세 버튼 (작은 화면에서는 세로로)
+/// 분류 세 버튼: 보통 글씨는 나란히(큰 색 버튼 3개), 큰 글씨는 세로로
 class DecisionButtons extends StatelessWidget {
   final void Function(Decision) onPick;
   const DecisionButtons({super.key, required this.onPick});
   @override
   Widget build(BuildContext context) {
+    final scale = MediaQuery.textScalerOf(context).scale(1);
     return LayoutBuilder(
       builder: (context, c) {
-        final scale = MediaQuery.textScalerOf(context).scale(1);
-        final row = c.maxWidth > 560 && scale < 1.3;
-        final buttons = [
-          for (final d in [Decision.use, Decision.sell, Decision.discard]) DecisionButton(d, onTap: () => onPick(d)),
-        ];
-        if (row) {
+        const order = [Decision.use, Decision.sell, Decision.discard];
+        if (scale < 1.2 && c.maxWidth >= 300) {
           return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final b in buttons)
-                Expanded(
-                  child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: b),
-                ),
+              for (final d in order) ...[if (d != order.first) const SizedBox(width: 8), Expanded(child: _TallDecisionButton(d, onTap: () => onPick(d)))],
             ],
           );
         }
         return Column(
           children: [
-            for (final b in buttons)
+            for (final d in order)
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSizes.gapSmall),
-                child: b,
+                child: DecisionButton(d, onTap: () => onPick(d)),
               ),
           ],
         );
       },
+    );
+  }
+}
+
+/// 세로형 큰 분류 버튼 (아이콘 위, 글자 아래)
+class _TallDecisionButton extends StatelessWidget {
+  final Decision decision;
+  final VoidCallback onTap;
+  const _TallDecisionButton(this.decision, {required this.onTap});
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final color = decisionColor(context, decision);
+    return Pressable(
+      semanticLabel: decision.label,
+      onTap: onTap,
+      builder: (context, pressed) => AnimatedContainer(
+        duration: context.motion.fast,
+        margin: EdgeInsets.only(top: pressed ? 3 : 0),
+        padding: EdgeInsets.only(bottom: pressed ? 1 : 4),
+        decoration: BoxDecoration(
+          color: Color.lerp(color, Colors.black, 0.35),
+          borderRadius: BorderRadius.circular(AppSizes.radius),
+          boxShadow: AppShadows.raised(p, pressed: pressed),
+        ),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 92),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(AppSizes.radius)),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Emoji3D(decision.emoji, size: 38),
+              const SizedBox(height: 4),
+              Text(
+                decision.label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800, fontFamily: appFont),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -302,7 +337,8 @@ class ItemPhoto extends StatelessWidget {
   }
 }
 
-/// 물건 목록 카드: 사진 중심, 테두리 색이 분류. (가벼운 평면 카드)
+/// 물건 카드 (당근마켓식): 사진이 카드 대부분, 왼쪽 분류색 띠, 사진 위 상태 배지, 큰 가격.
+/// 사진은 작은 썸네일 캐시만 쓰는 가벼운 평면 카드(그림자만 살짝).
 class ItemCard extends StatelessWidget {
   final Item item;
   final VoidCallback onTap;
@@ -312,54 +348,200 @@ class ItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final color = decisionColor(context, item.decision);
+    final t = Theme.of(context).textTheme;
+    final status = item.saleStatus != null
+        ? Chip3(
+            item.saleStatus == SaleStatus.listing ? '판매중' : (item.saleStatus == SaleStatus.reserved ? '예약중' : '거래완료'),
+            item.saleStatus == SaleStatus.sold ? p.muted : p.progress,
+          )
+        : (item.discardDoneAt != null ? Chip3('폐기 완료', p.muted) : decisionChip(context, item.decision));
+    final price = item.decision == Decision.sell && item.price != null ? won(item.price) : null;
     return Semantics(
       button: true,
-      label: '${item.name}, ${item.decision?.label ?? '아직 안 정함'}',
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppSizes.radius),
-        child: Container(
-          decoration: BoxDecoration(
-            color: p.surface,
-            borderRadius: BorderRadius.circular(AppSizes.radius),
-            border: Border.all(color: color, width: AppSizes.cardBorder),
-          ),
+      label: '${item.name}, ${item.decision?.label ?? '아직 안 정함'}${price == null ? '' : ', $price'}',
+      child: DecoratedBox(
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppSizes.radius), boxShadow: AppShadows.soft(p)),
+        child: Material(
+          color: p.surface,
+          borderRadius: BorderRadius.circular(AppSizes.radius),
           clipBehavior: Clip.antiAlias,
-          child: Row(
+          child: InkWell(
+            onTap: onTap,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(left: BorderSide(color: color, width: 8)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AspectRatio(
+                    aspectRatio: 16 / 10,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        ItemPhoto(item),
+                        Positioned(left: 10, top: 10, child: status),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(item.name, style: t.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+                              if (price != null) Text(price, style: t.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                              if (item.room.isNotEmpty || item.spot.isNotEmpty)
+                                Text(
+                                  [item.room, item.spot].where((s) => s.isNotEmpty).join(' · '),
+                                  style: t.bodySmall,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                            ],
+                          ),
+                        ),
+                        ?trailing,
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 물건 카드 목록: 넓은 화면은 2~3열, 좁은 화면은 1열
+class ItemGrid extends StatelessWidget {
+  final List<Item> items;
+  final void Function(Item) onTap;
+  final Widget? Function(Item)? trailing;
+  final String storageKey;
+  final Widget? header;
+  const ItemGrid({super.key, required this.items, required this.onTap, this.trailing, required this.storageKey, this.header});
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, c) {
+      final cols = c.maxWidth >= 1000 ? 3 : (c.maxWidth >= 640 ? 2 : 1);
+      final rows = (items.length / cols).ceil();
+      return ListView.builder(
+        key: PageStorageKey(storageKey),
+        padding: const EdgeInsets.fromLTRB(AppSizes.page, AppSizes.page, AppSizes.page, 120),
+        itemCount: rows + (header == null ? 0 : 1),
+        itemBuilder: (context, r) {
+          if (header != null) {
+            if (r == 0) return header!;
+            r -= 1;
+          }
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSizes.cardGap),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var k = 0; k < cols; k++) ...[
+                  if (k > 0) const SizedBox(width: AppSizes.gap),
+                  Expanded(
+                    child: r * cols + k < items.length
+                        ? ItemCard(items[r * cols + k], onTap: () => onTap(items[r * cols + k]), trailing: trailing?.call(items[r * cols + k]))
+                        : const SizedBox(),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+/// 분류 타일 (색이 채워진 큰 타일): 지금 쓰는 것 / 판매 / 폐기
+class CategoryTile extends StatelessWidget {
+  final Decision decision;
+  final String count;
+  final String sub;
+  final VoidCallback onTap;
+  const CategoryTile({super.key, required this.decision, required this.count, required this.sub, required this.onTap});
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final color = decisionColor(context, decision);
+    return Pressable(
+      semanticLabel: '${decision.label} $count. $sub',
+      onTap: onTap,
+      builder: (context, pressed) => AnimatedContainer(
+        duration: context.motion.fast,
+        margin: EdgeInsets.only(top: pressed ? 3 : 0),
+        padding: EdgeInsets.only(bottom: pressed ? 1 : AppSizes.depth),
+        decoration: BoxDecoration(
+          color: Color.lerp(color, Colors.black, 0.3),
+          borderRadius: BorderRadius.circular(AppSizes.radius),
+          boxShadow: AppShadows.raised(p, pressed: pressed),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(AppSizes.radius)),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(width: 104, height: 104, child: ItemPhoto(item, height: 104)),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(item.name, style: Theme.of(context).textTheme.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 4),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
-                        children: [
-                          decisionChip(context, item.decision),
-                          if (item.saleStatus != null) Chip3(item.saleStatus!.label, p.progress),
-                          if (item.discardDoneAt != null) Chip3('폐기 완료', p.muted),
-                        ],
-                      ),
-                      if (item.room.isNotEmpty || item.spot.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          [item.room, item.spot].where((s) => s.isNotEmpty).join(' · '),
-                          style: TextStyle(color: p.muted, fontSize: 15),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
+              Emoji3D(decision.emoji, size: 40),
+              const SizedBox(height: 6),
+              Text(
+                count,
+                style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800),
               ),
-              ?trailing,
+              Text(
+                decision.label,
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
+              ),
+              Text(sub, style: const TextStyle(color: Colors.white, fontSize: 13.5), maxLines: 2),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 토스식 숫자 띠: 큰 숫자 + 작은 설명
+class StatStrip extends StatelessWidget {
+  final List<(String, String)> stats; // (숫자, 설명)
+  final VoidCallback? onTap;
+  const StatStrip({super.key, required this.stats, this.onTap});
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final t = Theme.of(context).textTheme;
+    return Material(
+      color: Color.alphaBlend(p.primary.withValues(alpha: 0.10), p.surface),
+      borderRadius: BorderRadius.circular(AppSizes.radius),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Wrap(
+            spacing: 24,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.end,
+            children: [
+              for (final (n, label) in stats)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(n, style: t.displaySmall?.copyWith(fontSize: 28)),
+                    Text(label, style: t.bodySmall),
+                  ],
+                ),
             ],
           ),
         ),
@@ -750,27 +932,79 @@ class Panel extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final hc = Theme.of(context).extension<AppThemeExt>()!.highContrast;
+    final radius = BorderRadius.circular(AppSizes.radius);
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.cardGap),
-      child: Material(
-        color: fill ?? p.surface,
-        elevation: 0,
-        shadowColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSizes.radius),
-          side: hc ? BorderSide(color: p.border, width: 2) : BorderSide.none,
+      // 채워진 카드 + 바깥쪽 부드러운 그림자 (테두리만 있는 상자 금지)
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: fill ?? p.surface,
+          borderRadius: radius,
+          boxShadow: AppShadows.soft(p),
+          border: hc ? Border.all(color: p.border, width: 2) : null,
         ),
-        clipBehavior: Clip.antiAlias,
-        child: DecoratedBox(
-          decoration: BoxDecoration(boxShadow: AppShadows.soft(p)),
-          child: Stack(
-            children: [
-              Padding(padding: EdgeInsets.fromLTRB(AppSizes.gap + (border != null ? 8 : 0), AppSizes.gap, AppSizes.gap, AppSizes.gap), child: child),
-              if (border != null) Positioned(left: 0, top: 0, bottom: 0, child: Container(width: 8, color: border)),
-            ],
+        child: ClipRRect(
+          borderRadius: radius,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Stack(
+              children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(AppSizes.gap + (border != null ? 8 : 0), AppSizes.gap, AppSizes.gap, AppSizes.gap),
+                  child: SizedBox(width: double.infinity, child: child),
+                ),
+                if (border != null) Positioned(left: 0, top: 0, bottom: 0, child: Container(width: 8, color: border)),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+
+/// 단계 목록 카드 (번호 동그라미 + 한 줄씩)
+class StepList extends StatelessWidget {
+  final List<String> steps;
+  final Color? color;
+  const StepList(this.steps, {super.key, this.color});
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final c = color ?? p.primary;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < steps.length; i++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+                  child: Text(
+                    '${i + 1}',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(steps[i], style: const TextStyle(fontSize: 17, height: 1.4)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// 여러 줄 안내에서 "1. ..." 같은 번호를 떼어 단계 목록으로
+List<String> splitSteps(String text) => text.split('\n').map((l) => l.trim().replaceFirst(RegExp(r'^\d+[.)]\s*'), '')).where((l) => l.isNotEmpty).toList();

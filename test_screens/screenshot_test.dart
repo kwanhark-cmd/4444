@@ -8,6 +8,8 @@ import 'package:binugi/ui/screens/classify_screen.dart';
 import 'package:binugi/ui/screens/discard_screen.dart';
 import 'package:binugi/ui/screens/progress_screen.dart';
 import 'package:binugi/ui/screens/sell_screen.dart';
+import 'package:binugi/ui/screens/settings_screen.dart';
+import 'package:binugi/ui/screens/item_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -34,6 +36,8 @@ void main() {
     '3_판매도우미': (s, _) => SellDetailScreen(itemId: s.id!),
     '4_폐기도우미': (_, d) => DiscardDetailScreen(itemId: d.id!),
     '5_진행현황': (_, _) => const ProgressScreen(),
+    '6_설정': (_, _) => const SettingsScreen(),
+    '7_물건목록': (_, _) => const ItemListScreen(),
   };
   for (final theme in [ThemeModeChoice.light, ThemeModeChoice.dark]) {
     for (final e in shots.entries) {
@@ -76,7 +80,7 @@ void main() {
           s.global
             ..onboarded = true
             ..theme = theme;
-          for (final t in ['home', 'swipe', 'sell']) {
+          for (final t in ['home', 'swipe', 'sell', 'register']) {
             await s.repo.setSetting(s.uid, 'tip_$t', '1');
           }
           await s.refresh();
@@ -90,10 +94,13 @@ void main() {
         }
         await tester.runAsync(() async {
           for (final el in find.byType(Image).evaluate()) {
-            await precacheImage((el.widget as Image).image, el);
+            await precacheImage((el.widget as Image).image, el).timeout(const Duration(seconds: 2), onTimeout: () {});
           }
         });
-        await tester.pump(const Duration(milliseconds: 300));
+        for (var i = 0; i < 3; i++) {
+          await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 200)));
+          await tester.pump(const Duration(milliseconds: 100));
+        }
         await expectLater(find.byType(MaterialApp), matchesGoldenFile('../docs/화면/${e.key}_${theme.name}.png'));
         await tester.pump(const Duration(seconds: 6));
       });

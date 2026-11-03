@@ -49,7 +49,9 @@ abstract class MediaPicker {
   Future<String?> takeVideo();
   Future<String?> pickVideo();
   Future<String?> pickBackupFile();
-  Future<String?> pickTextFile();
+
+  /// 글자 파일 내용 읽기 (AI 열쇠, 구글 JSON, 제미나이 정리 파일 등)
+  Future<String?> pickTextFile({List<String> extensions = const ['txt', 'csv', 'md', 'json']});
   Future<String?> chooseSaveFolder();
 }
 
@@ -121,16 +123,14 @@ class DeviceMediaPicker implements MediaPicker {
   }
 
   @override
-  Future<String?> pickTextFile() async {
+  Future<String?> pickTextFile({List<String> extensions = const ['txt', 'csv', 'md', 'json']}) async {
     try {
       final f = await openFile(
-        acceptedTypeGroups: [
-          const XTypeGroup(label: '목록 파일', extensions: ['txt', 'csv', 'md']),
-        ],
+        acceptedTypeGroups: [XTypeGroup(label: '파일', extensions: extensions)],
       );
       return f == null ? null : await f.readAsString();
     } catch (e) {
-      log.error('[파일] 목록 파일 읽기 실패', e);
+      log.error('[파일] 파일 읽기 실패', e);
       return null;
     }
   }

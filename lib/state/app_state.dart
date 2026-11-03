@@ -18,7 +18,9 @@ import '../services/export_service.dart';
 import '../services/image_service.dart';
 import '../services/notification_service.dart';
 import '../services/paths.dart';
+import '../services/gmail_service.dart';
 import '../services/secret_store.dart';
+import '../services/storage_service.dart';
 import '../services/update_service.dart';
 import '../services/sale_service.dart';
 import '../services/timelapse_service.dart';
@@ -44,6 +46,8 @@ class AppState extends ChangeNotifier {
   late final TimelapseService timelapse;
   late final SecretStore secrets;
   late final UpdateService updates;
+  late final GmailService gmail;
+  late final StorageService storage;
 
   /// 오류 창 등에서 보여 줄 마지막 시작 정보 (자료 변환 전 자동 백업 파일 등)
   File? preUpgradeBackup;
@@ -64,6 +68,8 @@ class AppState extends ChangeNotifier {
     : _http = httpClient ?? http.Client() {
     secrets = secretStore ?? DeviceSecretStore(repo);
     updates = UpdateService(client: _http, paths: paths, currentVersion: appVersion);
+    gmail = GmailService(_http);
+    storage = StorageService(paths, repo);
     ai = AiService(repo, clock, httpClient: httpClient);
     sales = SaleService(repo, clock);
     images = ImageService(paths);

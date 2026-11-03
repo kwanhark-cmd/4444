@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/disposal_guide.dart';
+import '../../services/gmail_service.dart';
+import '../../services/media_picker.dart';
 import '../../services/voice_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
@@ -213,10 +215,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           controller: _key,
           obscureText: true,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(labelText: 'AI 연결 키 (없으면 비워 두세요)'),
+          decoration: const InputDecoration(labelText: 'AI 열쇠 (없으면 비워 두세요)'),
         ),
         const SizedBox(height: 8),
-        Text('키는 이 기기 안에만 저장되고, 백업 파일과 기록에는 들어가지 않아요.', style: TextStyle(color: p.muted)),
+        BigButton(
+          label: '열쇠 파일 불러오기',
+          emoji: 'folder',
+          color: p.primary,
+          onTap: () async {
+            final t = await context.read<MediaPicker>().pickTextFile(extensions: ['txt', 'json', 'env', 'key']);
+            final k = t == null ? null : findApiKey(t);
+            if (k == null) {
+              if (t != null) showMessage('이 파일에서 AI 열쇠를 찾지 못했어요');
+              return;
+            }
+            setState(() => _key.text = k);
+          },
+        ),
+        const SizedBox(height: 8),
+        Text('열쇠는 이 기기의 보안 저장소에만 보관되고, 백업 파일과 기록에는 들어가지 않아요.', style: TextStyle(color: p.muted)),
       ],
     );
   }

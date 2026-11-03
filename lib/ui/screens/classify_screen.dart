@@ -221,7 +221,7 @@ class _ClassifyScreenState extends State<ClassifyScreen> with SingleTickerProvid
       decoration: BoxDecoration(
         color: p.surface,
         borderRadius: BorderRadius.circular(AppSizes.radius),
-        border: Border.all(color: color, width: hint == null ? 2 : 6),
+        border: hint == null ? null : Border.all(color: color, width: 6),
         boxShadow: AppShadows.raised(p),
       ),
       clipBehavior: Clip.antiAlias,

@@ -21,27 +21,27 @@ class DiscardScreen extends StatelessWidget {
       ..sort((a, b) => (a.discardDoneAt == null ? 0 : 1).compareTo(b.discardDoneAt == null ? 0 : 1));
     return AppPage(
       title: '폐기 도우미',
-      body: ListView(
-        key: const PageStorageKey('discard_1'),
-        padding: const EdgeInsets.all(AppSizes.page),
-        children: [
-          if (s.user.regionLabel.isEmpty)
-            Panel(
-              border: p.attention,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text('사는 지역을 알려 주시면 대형폐기물 신고 방법을 더 정확히 안내해요.', style: TextStyle(fontSize: 17)),
-                  const SizedBox(height: 8),
-                  BigButton(label: '지역 정하기', emoji: 'home', color: p.primary, onTap: () => go(context, const SettingsScreen())),
-                ],
+      body: ItemGrid(
+        storageKey: 'discard_1',
+        items: list,
+        onTap: (it) => go(context, DiscardDetailScreen(itemId: it.id!)),
+        header: Column(
+          children: [
+            if (s.user.regionLabel.isEmpty)
+              Panel(
+                border: p.attention,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text('사는 지역을 알려 주시면 대형폐기물 신고 방법을 더 정확히 안내해요.', style: TextStyle(fontSize: 17)),
+                    const SizedBox(height: 8),
+                    BigButton(label: '지역 정하기', emoji: 'home', color: p.primary, onTap: () => go(context, const SettingsScreen())),
+                  ],
+                ),
               ),
-            ),
-          if (list.isEmpty)
-            const EmptyState(message: '폐기로 정한 물건이 아직 없어요.', mood: MascotMood.thinking)
-          else
-            for (final it in list) ...[ItemCard(it, onTap: () => go(context, DiscardDetailScreen(itemId: it.id!))), const SizedBox(height: 10)],
-        ],
+            if (list.isEmpty) const EmptyState(message: '폐기로 정한 물건이 아직 없어요.', mood: MascotMood.thinking),
+          ],
+        ),
       ),
     );
   }
@@ -108,7 +108,7 @@ class _DiscardDetailScreenState extends State<DiscardDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(a.bulkySteps!, style: const TextStyle(fontSize: 17, height: 1.5)),
+                  StepList(splitSteps(a.bulkySteps!), color: p.discard),
                   const SizedBox(height: 8),
                   Text(a.feeText!, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
                 ],
