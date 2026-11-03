@@ -33,6 +33,16 @@ void main() {
       expect(byName['그냥 메모 한 줄']!.decision, isNull, reason: '분류 없는 줄은 사용자가 확인');
     });
 
+    test('표 형식(csv) 목록 파일', () {
+      final r = parseImportText('이름,분류,방,메모\n커피 머신,판매,주방,잘 작동함\n의자,폐기,거실,\n책상,,서재,');
+      expect(r.map((l) => l.name), ['커피 머신', '의자', '책상']);
+      expect(r[0].decision, Decision.sell);
+      expect(r[0].room, '주방');
+      expect(r[0].note, '잘 작동함');
+      expect(r[1].decision, Decision.discard);
+      expect(r[2].decision, isNull);
+    });
+
     test('빈 글은 빈 목록', () {
       expect(parseImportText('  \n\n'), isEmpty);
     });

@@ -606,7 +606,10 @@ class CaptureButton extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(color: p.accent, borderRadius: BorderRadius.circular(20)),
-          child: Text(label, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: p.onAccent)),
+          child: Text(
+            label,
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: p.onAccent),
+          ),
         ),
       ],
     );

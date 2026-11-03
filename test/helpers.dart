@@ -70,6 +70,8 @@ class FakePicker implements MediaPicker {
   Future<String?> pickBackupFile() async => backup;
   @override
   Future<String?> chooseSaveFolder() async => null;
+  @override
+  Future<String?> pickTextFile() async => '이름,분류\n커피 머신,판매';
 }
 
 /// 가짜 영상 장면 뽑기: 정해진 장 수만큼 JPEG 저장

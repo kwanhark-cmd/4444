@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../data/models.dart';
 import '../../services/gemini_import.dart';
+import '../../services/media_picker.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/common.dart';
@@ -46,7 +47,7 @@ class _ImportScreenState extends State<ImportScreen> {
       body: ListView(
         padding: const EdgeInsets.all(AppSizes.page),
         children: [
-          Text('제미나이에서 정리한 글을 붙여넣거나, 제미나이 앱에서 "공유하기 → 이 앱"을 누르세요. 가져온 내용은 확인한 뒤에 등록돼요.', style: Theme.of(context).textTheme.bodyLarge),
+          Text('제미나이에서 정리한 글이나 다른 앱의 물건 목록 파일을 넣거나, 제미나이 앱에서 "공유하기 → 이 앱"을 누르세요. 가져온 내용은 확인한 뒤에 등록돼요.', style: Theme.of(context).textTheme.bodyLarge),
           const SizedBox(height: AppSizes.gap),
           BigButton(
             label: '복사한 글 붙여넣기',
@@ -57,6 +58,19 @@ class _ImportScreenState extends State<ImportScreen> {
               if (d?.text != null) {
                 text.text = d!.text!;
                 setState(() => lines = parseImportText(text.text));
+              }
+            },
+          ),
+          const SizedBox(height: 8),
+          BigButton(
+            label: '목록 파일에서 가져오기 (txt·csv)',
+            emoji: 'folder',
+            color: p.muted,
+            onTap: () async {
+              final t = await context.read<MediaPicker>().pickTextFile();
+              if (t != null) {
+                text.text = t;
+                setState(() => lines = parseImportText(t));
               }
             },
           ),

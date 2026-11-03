@@ -24,6 +24,7 @@ abstract class MediaPicker {
   Future<String?> takeVideo();
   Future<String?> pickVideo();
   Future<String?> pickBackupFile();
+  Future<String?> pickTextFile();
   Future<String?> chooseSaveFolder();
 }
 
@@ -87,6 +88,21 @@ class DeviceMediaPicker implements MediaPicker {
       return f?.path;
     } catch (e) {
       log.warn('백업 파일 고르기 실패: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<String?> pickTextFile() async {
+    try {
+      final f = await openFile(
+        acceptedTypeGroups: [
+          const XTypeGroup(label: '목록 파일', extensions: ['txt', 'csv', 'md']),
+        ],
+      );
+      return f == null ? null : await f.readAsString();
+    } catch (e) {
+      log.warn('목록 파일 읽기 실패: $e');
       return null;
     }
   }

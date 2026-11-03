@@ -43,6 +43,8 @@ class _HomeScreenState extends State<HomeScreen> {
   /// 앱을 열면 밀린 알림(1년 이동 등)을 먼저 보여 줌
   void _showMissed() {
     final s = context.read<AppState>();
+    // 오늘 아침 알림이 새로 왔으면 음성으로도 안내
+    if (s.unread.any((n) => n.kind == 'daily')) s.say(s.todaySpeech());
     final important = s.unread.where((n) => n.kind == 'one_year_moved' || n.kind == 'one_year_warn').toList();
     if (important.isEmpty) return;
     toast(context, important.first.title, actionLabel: '알림 보기', onAction: () => go(context, const NoticesScreen()));

@@ -21,7 +21,28 @@ Decision? _decisionIn(String s) {
   return null;
 }
 
+/// 표 형식(쉼표·탭) 목록: 첫 줄이 "이름,분류,..." 같은 머리글이면 칸으로 읽음
+List<ImportedLine>? _parseTable(String text) {
+  final rows = text.split(RegExp(r'\r?\n')).where((l) => l.trim().isNotEmpty).toList();
+  if (rows.length < 2) return null;
+  final sep = rows.first.contains('\t') ? '\t' : ',';
+  final head = rows.first.split(sep).map((h) => h.trim()).toList();
+  final ni = head.indexWhere((h) => RegExp(r'이름|물건|name', caseSensitive: false).hasMatch(h));
+  if (ni < 0) return null;
+  final di = head.indexWhere((h) => RegExp(r'분류|결정|decision', caseSensitive: false).hasMatch(h));
+  final ri = head.indexWhere((h) => RegExp(r'방|장소|위치|room', caseSensitive: false).hasMatch(h));
+  final mi = head.indexWhere((h) => RegExp(r'메모|설명|상태|note', caseSensitive: false).hasMatch(h));
+  String at(List<String> c, int i) => i >= 0 && i < c.length ? c[i].trim().replaceAll('"', '') : '';
+  return [
+    for (final r in rows.skip(1))
+      if (at(r.split(sep), ni).isNotEmpty)
+        ImportedLine(name: at(r.split(sep), ni), decision: _decisionIn(at(r.split(sep), di)), room: at(r.split(sep), ri), note: at(r.split(sep), mi)),
+  ];
+}
+
 List<ImportedLine> parseImportText(String text) {
+  final table = _parseTable(text);
+  if (table != null) return table;
   final out = <ImportedLine>[];
   var room = '';
   for (final raw in text.split(RegExp(r'\r?\n'))) {
