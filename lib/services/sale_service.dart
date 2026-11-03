@@ -66,9 +66,7 @@ class SaleService {
   /// [now]는 "앱이 본 가장 늦은 시각"을 써서 시간이 앞뒤로 바뀌어도 꼬이지 않게 합니다.
   Future<SaleCheckResult> dailyCheck(int userId, UserSettings s, DateTime now) async {
     final result = SaleCheckResult();
-    final selling = (await repo.items(userId, decision: Decision.sell))
-        .where((i) => i.saleStatus != SaleStatus.sold)
-        .toList();
+    final selling = (await repo.items(userId, decision: Decision.sell)).where((i) => i.saleStatus != SaleStatus.sold).toList();
     for (final item in selling) {
       final days = daysListed(item, now);
       if (days >= oneYearDays) {
@@ -77,28 +75,32 @@ class SaleService {
         item.decidedAt = now;
         item.saleStatus = null;
         await repo.updateItem(item);
-        await repo.addNotice(Notice(
-          userId: userId,
-          kind: 'one_year_moved',
-          title: '1년 동안 안 팔려 폐기 목록으로 옮겼어요',
-          body: '"${item.name}"을(를) 폐기 목록으로 옮겼어요. 마음이 바뀌면 물건 화면에서 "판매로 되돌리기"를 누르세요.',
-          itemId: item.id,
-          createdAt: now,
-        ));
+        await repo.addNotice(
+          Notice(
+            userId: userId,
+            kind: 'one_year_moved',
+            title: '1년 동안 안 팔려 폐기 목록으로 옮겼어요',
+            body: '"${item.name}"을(를) 폐기 목록으로 옮겼어요. 마음이 바뀌면 물건 화면에서 "판매로 되돌리기"를 누르세요.',
+            itemId: item.id,
+            createdAt: now,
+          ),
+        );
         result.moved.add(item);
         continue;
       }
       if (days >= oneYearDays - warnBeforeDays && item.oneYearWarnedAt == null) {
         item.oneYearWarnedAt = now;
         await repo.updateItem(item);
-        await repo.addNotice(Notice(
-          userId: userId,
-          kind: 'one_year_warn',
-          title: '곧 폐기 목록으로 옮겨져요',
-          body: '"${item.name}"이(가) 판매 1년이 다 돼 가요. ${oneYearDays - days}일 뒤 폐기 목록으로 옮겨요. 가격을 내리거나 나눔을 해 보세요.',
-          itemId: item.id,
-          createdAt: now,
-        ));
+        await repo.addNotice(
+          Notice(
+            userId: userId,
+            kind: 'one_year_warn',
+            title: '곧 폐기 목록으로 옮겨져요',
+            body: '"${item.name}"이(가) 판매 1년이 다 돼 가요. ${oneYearDays - days}일 뒤 폐기 목록으로 옮겨요. 가격을 내리거나 나눔을 해 보세요.',
+            itemId: item.id,
+            createdAt: now,
+          ),
+        );
         result.warned.add(item);
       }
       if (item.saleStatus == SaleStatus.listing) {
@@ -107,14 +109,16 @@ class SaleService {
         if (drop != null && (last == null || elapsedDays(last, now) >= s.priceDropDays)) {
           item.priceDropSuggestedAt = now;
           await repo.updateItem(item);
-          await repo.addNotice(Notice(
-            userId: userId,
-            kind: 'price_drop',
-            title: '가격을 조금 내려 볼까요?',
-            body: '"${item.name}"이(가) ${daysListed(item, now)}일째 안 팔렸어요. ${won(item.price)} → ${won(drop)} 추천해요.',
-            itemId: item.id,
-            createdAt: now,
-          ));
+          await repo.addNotice(
+            Notice(
+              userId: userId,
+              kind: 'price_drop',
+              title: '가격을 조금 내려 볼까요?',
+              body: '"${item.name}"이(가) ${daysListed(item, now)}일째 안 팔렸어요. ${won(item.price)} → ${won(drop)} 추천해요.',
+              itemId: item.id,
+              createdAt: now,
+            ),
+          );
           result.priceDrops.add(item);
         }
       }

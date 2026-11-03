@@ -122,14 +122,9 @@ class AppState extends ChangeNotifier {
     if (await repo.hasNoticeSince(uid, 'daily', dayStart)) return;
     final pick = await _pickToday();
     if (pick == null) return;
-    await repo.addNotice(Notice(
-      userId: uid,
-      kind: 'daily',
-      title: '오늘은 이 물건 하나만 정해 보세요',
-      body: '"${pick.name}" — 지금 쓰는 것, 판매, 폐기 중 하나를 골라 주세요.',
-      itemId: pick.id,
-      createdAt: n,
-    ));
+    await repo.addNotice(
+      Notice(userId: uid, kind: 'daily', title: '오늘은 이 물건 하나만 정해 보세요', body: '"${pick.name}" — 지금 쓰는 것, 판매, 폐기 중 하나를 골라 주세요.', itemId: pick.id, createdAt: n),
+    );
   }
 
   /// 오늘 정할 물건 하나: 하루 동안 같은 물건, 정하면 다음 물건
@@ -198,8 +193,7 @@ class AppState extends ChangeNotifier {
   }
 
   // ---------- 물건 ----------
-  Future<SavedPhoto> savePhoto(Uint8List bytes, {String? ext}) =>
-      images.save(bytes, keepOriginal: user.keepOriginals, originalExt: ext);
+  Future<SavedPhoto> savePhoto(Uint8List bytes, {String? ext}) => images.save(bytes, keepOriginal: user.keepOriginals, originalExt: ext);
 
   Future<Item> addItem({
     required String name,

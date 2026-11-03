@@ -3,38 +3,38 @@ enum Decision { use, sell, discard }
 
 extension DecisionInfo on Decision {
   String get label => switch (this) {
-        Decision.use => '지금 쓰는 것',
-        Decision.sell => '판매',
-        Decision.discard => '폐기',
-      };
+    Decision.use => '지금 쓰는 것',
+    Decision.sell => '판매',
+    Decision.discard => '폐기',
+  };
   String get emoji => switch (this) {
-        Decision.use => 'use',
-        Decision.sell => 'sell',
-        Decision.discard => 'discard',
-      };
+    Decision.use => 'use',
+    Decision.sell => 'sell',
+    Decision.discard => 'discard',
+  };
   String get code => name;
   static Decision? parse(String? s) => switch (s) {
-        'use' => Decision.use,
-        'sell' => Decision.sell,
-        'discard' => Decision.discard,
-        _ => null,
-      };
+    'use' => Decision.use,
+    'sell' => Decision.sell,
+    'discard' => Decision.discard,
+    _ => null,
+  };
 }
 
 enum SaleStatus { listing, reserved, sold }
 
 extension SaleStatusInfo on SaleStatus {
   String get label => switch (this) {
-        SaleStatus.listing => '판매중',
-        SaleStatus.reserved => '예약',
-        SaleStatus.sold => '판매완료',
-      };
+    SaleStatus.listing => '판매중',
+    SaleStatus.reserved => '예약',
+    SaleStatus.sold => '판매완료',
+  };
   static SaleStatus? parse(String? s) => switch (s) {
-        'listing' => SaleStatus.listing,
-        'reserved' => SaleStatus.reserved,
-        'sold' => SaleStatus.sold,
-        _ => null,
-      };
+    'listing' => SaleStatus.listing,
+    'reserved' => SaleStatus.reserved,
+    'sold' => SaleStatus.sold,
+    _ => null,
+  };
 }
 
 class AppUser {
@@ -42,11 +42,8 @@ class AppUser {
   final String name;
   final DateTime createdAt;
   AppUser({required this.id, required this.name, required this.createdAt});
-  factory AppUser.fromMap(Map<String, Object?> m) => AppUser(
-        id: m['id'] as int,
-        name: m['name'] as String,
-        createdAt: DateTime.fromMillisecondsSinceEpoch(m['created_at'] as int),
-      );
+  factory AppUser.fromMap(Map<String, Object?> m) =>
+      AppUser(id: m['id'] as int, name: m['name'] as String, createdAt: DateTime.fromMillisecondsSinceEpoch(m['created_at'] as int));
 }
 
 DateTime? _dt(Object? v) => v == null ? null : DateTime.fromMillisecondsSinceEpoch(v as int);
@@ -135,91 +132,89 @@ class Item {
     this.exportedAt,
   });
 
-  bool get isDone =>
-      (decision == Decision.sell && saleStatus == SaleStatus.sold) ||
-      (decision == Decision.discard && discardDoneAt != null);
+  bool get isDone => (decision == Decision.sell && saleStatus == SaleStatus.sold) || (decision == Decision.discard && discardDoneAt != null);
 
   Map<String, Object?> toMap() => {
-        if (id != null) 'id': id,
-        'user_id': userId,
-        'name': name,
-        'kind': kind,
-        'condition': condition,
-        'room': room,
-        'spot': spot,
-        'tags': tags,
-        'description': description,
-        'story': story,
-        'photo_path': photoPath,
-        'thumb_path': thumbPath,
-        'original_path': originalPath,
-        'source': source,
-        'decision': decision?.code,
-        'ai_suggestion': aiSuggestion?.code,
-        'ai_reason': aiReason,
-        'created_at': _ms(createdAt),
-        'decided_at': _ms(decidedAt),
-        'sale_status': saleStatus?.name,
-        'price_low': priceLow,
-        'price_high': priceHigh,
-        'price': price,
-        'initial_price': initialPrice,
-        'listed_at': _ms(listedAt),
-        'last_price_drop_at': _ms(lastPriceDropAt),
-        'price_drop_suggested_at': _ms(priceDropSuggestedAt),
-        'sold_price': soldPrice,
-        'sold_at': _ms(soldAt),
-        'listing_title': listingTitle,
-        'listing_body': listingBody,
-        'listing_category': listingCategory,
-        'shipping': shipping ? 1 : 0,
-        'one_year_warned_at': _ms(oneYearWarnedAt),
-        'moved_from_sale_at': _ms(movedFromSaleAt),
-        'discard_done_at': _ms(discardDoneAt),
-        'digital_keep': digitalKeep ? 1 : 0,
-        'exported_at': _ms(exportedAt),
-      };
+    if (id != null) 'id': id,
+    'user_id': userId,
+    'name': name,
+    'kind': kind,
+    'condition': condition,
+    'room': room,
+    'spot': spot,
+    'tags': tags,
+    'description': description,
+    'story': story,
+    'photo_path': photoPath,
+    'thumb_path': thumbPath,
+    'original_path': originalPath,
+    'source': source,
+    'decision': decision?.code,
+    'ai_suggestion': aiSuggestion?.code,
+    'ai_reason': aiReason,
+    'created_at': _ms(createdAt),
+    'decided_at': _ms(decidedAt),
+    'sale_status': saleStatus?.name,
+    'price_low': priceLow,
+    'price_high': priceHigh,
+    'price': price,
+    'initial_price': initialPrice,
+    'listed_at': _ms(listedAt),
+    'last_price_drop_at': _ms(lastPriceDropAt),
+    'price_drop_suggested_at': _ms(priceDropSuggestedAt),
+    'sold_price': soldPrice,
+    'sold_at': _ms(soldAt),
+    'listing_title': listingTitle,
+    'listing_body': listingBody,
+    'listing_category': listingCategory,
+    'shipping': shipping ? 1 : 0,
+    'one_year_warned_at': _ms(oneYearWarnedAt),
+    'moved_from_sale_at': _ms(movedFromSaleAt),
+    'discard_done_at': _ms(discardDoneAt),
+    'digital_keep': digitalKeep ? 1 : 0,
+    'exported_at': _ms(exportedAt),
+  };
 
   factory Item.fromMap(Map<String, Object?> m) => Item(
-        id: m['id'] as int?,
-        userId: m['user_id'] as int,
-        name: (m['name'] as String?) ?? '',
-        kind: (m['kind'] as String?) ?? '',
-        condition: (m['condition'] as String?) ?? '',
-        room: (m['room'] as String?) ?? '',
-        spot: (m['spot'] as String?) ?? '',
-        tags: (m['tags'] as String?) ?? '',
-        description: (m['description'] as String?) ?? '',
-        story: (m['story'] as String?) ?? '',
-        photoPath: m['photo_path'] as String?,
-        thumbPath: m['thumb_path'] as String?,
-        originalPath: m['original_path'] as String?,
-        source: (m['source'] as String?) ?? 'photo',
-        decision: DecisionInfo.parse(m['decision'] as String?),
-        aiSuggestion: DecisionInfo.parse(m['ai_suggestion'] as String?),
-        aiReason: (m['ai_reason'] as String?) ?? '',
-        createdAt: _dt(m['created_at'])!,
-        decidedAt: _dt(m['decided_at']),
-        saleStatus: SaleStatusInfo.parse(m['sale_status'] as String?),
-        priceLow: m['price_low'] as int?,
-        priceHigh: m['price_high'] as int?,
-        price: m['price'] as int?,
-        initialPrice: m['initial_price'] as int?,
-        listedAt: _dt(m['listed_at']),
-        lastPriceDropAt: _dt(m['last_price_drop_at']),
-        priceDropSuggestedAt: _dt(m['price_drop_suggested_at']),
-        soldPrice: m['sold_price'] as int?,
-        soldAt: _dt(m['sold_at']),
-        listingTitle: (m['listing_title'] as String?) ?? '',
-        listingBody: (m['listing_body'] as String?) ?? '',
-        listingCategory: (m['listing_category'] as String?) ?? '',
-        shipping: (m['shipping'] as int? ?? 0) == 1,
-        oneYearWarnedAt: _dt(m['one_year_warned_at']),
-        movedFromSaleAt: _dt(m['moved_from_sale_at']),
-        discardDoneAt: _dt(m['discard_done_at']),
-        digitalKeep: (m['digital_keep'] as int? ?? 0) == 1,
-        exportedAt: _dt(m['exported_at']),
-      );
+    id: m['id'] as int?,
+    userId: m['user_id'] as int,
+    name: (m['name'] as String?) ?? '',
+    kind: (m['kind'] as String?) ?? '',
+    condition: (m['condition'] as String?) ?? '',
+    room: (m['room'] as String?) ?? '',
+    spot: (m['spot'] as String?) ?? '',
+    tags: (m['tags'] as String?) ?? '',
+    description: (m['description'] as String?) ?? '',
+    story: (m['story'] as String?) ?? '',
+    photoPath: m['photo_path'] as String?,
+    thumbPath: m['thumb_path'] as String?,
+    originalPath: m['original_path'] as String?,
+    source: (m['source'] as String?) ?? 'photo',
+    decision: DecisionInfo.parse(m['decision'] as String?),
+    aiSuggestion: DecisionInfo.parse(m['ai_suggestion'] as String?),
+    aiReason: (m['ai_reason'] as String?) ?? '',
+    createdAt: _dt(m['created_at'])!,
+    decidedAt: _dt(m['decided_at']),
+    saleStatus: SaleStatusInfo.parse(m['sale_status'] as String?),
+    priceLow: m['price_low'] as int?,
+    priceHigh: m['price_high'] as int?,
+    price: m['price'] as int?,
+    initialPrice: m['initial_price'] as int?,
+    listedAt: _dt(m['listed_at']),
+    lastPriceDropAt: _dt(m['last_price_drop_at']),
+    priceDropSuggestedAt: _dt(m['price_drop_suggested_at']),
+    soldPrice: m['sold_price'] as int?,
+    soldAt: _dt(m['sold_at']),
+    listingTitle: (m['listing_title'] as String?) ?? '',
+    listingBody: (m['listing_body'] as String?) ?? '',
+    listingCategory: (m['listing_category'] as String?) ?? '',
+    shipping: (m['shipping'] as int? ?? 0) == 1,
+    oneYearWarnedAt: _dt(m['one_year_warned_at']),
+    movedFromSaleAt: _dt(m['moved_from_sale_at']),
+    discardDoneAt: _dt(m['discard_done_at']),
+    digitalKeep: (m['digital_keep'] as int? ?? 0) == 1,
+    exportedAt: _dt(m['exported_at']),
+  );
 
   Item copy() => Item.fromMap(toMap());
 }
@@ -236,25 +231,25 @@ class Notice {
   final DateTime? readAt;
   Notice({this.id, required this.userId, required this.kind, required this.title, required this.body, this.itemId, required this.createdAt, this.readAt});
   Map<String, Object?> toMap() => {
-        if (id != null) 'id': id,
-        'user_id': userId,
-        'kind': kind,
-        'title': title,
-        'body': body,
-        'item_id': itemId,
-        'created_at': createdAt.millisecondsSinceEpoch,
-        'read_at': readAt?.millisecondsSinceEpoch,
-      };
+    if (id != null) 'id': id,
+    'user_id': userId,
+    'kind': kind,
+    'title': title,
+    'body': body,
+    'item_id': itemId,
+    'created_at': createdAt.millisecondsSinceEpoch,
+    'read_at': readAt?.millisecondsSinceEpoch,
+  };
   factory Notice.fromMap(Map<String, Object?> m) => Notice(
-        id: m['id'] as int?,
-        userId: m['user_id'] as int,
-        kind: m['kind'] as String,
-        title: m['title'] as String,
-        body: m['body'] as String,
-        itemId: m['item_id'] as int?,
-        createdAt: _dt(m['created_at'])!,
-        readAt: _dt(m['read_at']),
-      );
+    id: m['id'] as int?,
+    userId: m['user_id'] as int,
+    kind: m['kind'] as String,
+    title: m['title'] as String,
+    body: m['body'] as String,
+    itemId: m['item_id'] as int?,
+    createdAt: _dt(m['created_at'])!,
+    readAt: _dt(m['read_at']),
+  );
 }
 
 class TimelapseShot {
@@ -264,20 +259,9 @@ class TimelapseShot {
   final String path;
   final DateTime takenAt;
   TimelapseShot({this.id, required this.userId, required this.spot, required this.path, required this.takenAt});
-  Map<String, Object?> toMap() => {
-        if (id != null) 'id': id,
-        'user_id': userId,
-        'spot': spot,
-        'path': path,
-        'taken_at': takenAt.millisecondsSinceEpoch,
-      };
-  factory TimelapseShot.fromMap(Map<String, Object?> m) => TimelapseShot(
-        id: m['id'] as int?,
-        userId: m['user_id'] as int,
-        spot: m['spot'] as String,
-        path: m['path'] as String,
-        takenAt: _dt(m['taken_at'])!,
-      );
+  Map<String, Object?> toMap() => {if (id != null) 'id': id, 'user_id': userId, 'spot': spot, 'path': path, 'taken_at': takenAt.millisecondsSinceEpoch};
+  factory TimelapseShot.fromMap(Map<String, Object?> m) =>
+      TimelapseShot(id: m['id'] as int?, userId: m['user_id'] as int, spot: m['spot'] as String, path: m['path'] as String, takenAt: _dt(m['taken_at'])!);
 }
 
 /// AI가 사진에서 찾은 물건 (확정 전)

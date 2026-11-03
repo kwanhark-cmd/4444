@@ -75,9 +75,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       cancel = CancelToken();
     });
     try {
-      final frames = await s.video.extractFrames(path, cancel: cancel, onProgress: (v) {
-        if (mounted) setState(() => progress = v * 0.3);
-      });
+      final frames = await s.video.extractFrames(
+        path,
+        cancel: cancel,
+        onProgress: (v) {
+          if (mounted) setState(() => progress = v * 0.3);
+        },
+      );
       if (cancel!.cancelled) return _stop('취소했어요');
       if (frames.isEmpty) {
         _stop('');
@@ -142,15 +146,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!mounted || batches.isEmpty) return;
     if (cancelled) toast(context, '취소했어요. 지금까지 찾은 것만 보여 드려요.');
     if (notice != null) toast(context, notice);
-    await Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => ReviewScreen(
-        batches: batches,
-        room: room.text.trim(),
-        spot: spot.text.trim(),
-        description: desc.text.trim(),
-        source: fromVideo ? 'video' : 'photo',
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ReviewScreen(
+          batches: batches,
+          room: room.text.trim(),
+          spot: spot.text.trim(),
+          description: desc.text.trim(),
+          source: fromVideo ? 'video' : 'photo',
+        ),
       ),
-    ));
+    );
     desc.clear();
   }
 
@@ -176,60 +182,74 @@ class _RegisterScreenState extends State<RegisterScreen> {
       title: '물건 등록',
       body: busy
           ? _busyView(p)
-          : ListView(padding: const EdgeInsets.all(AppSizes.page), children: [
-              const FirstTimeTip(id: 'register', text: '방 전체를 영상으로 천천히 찍으면 AI가 물건을 하나씩 골라내요. 애매한 물건은 사진으로 따로 찍으세요.'),
-              Text('어디에 있는 물건인가요?', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              TextField(controller: room, decoration: const InputDecoration(labelText: '방 (예: 거실, 안방)')),
-              const SizedBox(height: 8),
-              TextField(controller: spot, decoration: const InputDecoration(labelText: '자리 (예: TV 옆 수납장)')),
-              const SizedBox(height: AppSizes.gap),
-              TextField(controller: desc, minLines: 1, maxLines: 3, decoration: const InputDecoration(labelText: '설명 (예: 10년 된 커피 머신, 잘 작동함)')),
-              const SizedBox(height: 8),
-              BigButton(
-                label: '말로 설명하기',
-                emoji: 'mic',
-                color: p.progress,
-                onTap: () async {
-                  final t = await listenOrType(context, title: '물건 설명', hint: '예: 10년 된 커피 머신, 잘 작동함', initial: desc.text);
-                  if (t != null) desc.text = t;
-                },
-              ),
-              const SectionTitle('사진으로 등록'),
-              if (picker.hasCamera) ...[
-                BigButton(label: '사진 찍기', emoji: 'camera', color: p.accent, onTap: _takePhoto),
+          : ListView(
+              padding: const EdgeInsets.all(AppSizes.page),
+              children: [
+                const FirstTimeTip(id: 'register', text: '방 전체를 영상으로 천천히 찍으면 AI가 물건을 하나씩 골라내요. 애매한 물건은 사진으로 따로 찍으세요.'),
+                Text('어디에 있는 물건인가요?', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
-              ],
-              BigButton(label: picker.hasCamera ? '앨범에서 사진 고르기 (여러 장)' : '사진 파일 넣기 (여러 장)', emoji: 'folder', color: p.primary, onTap: _pickPhotos),
-              const SectionTitle('영상으로 한 번에 등록'),
-              if (picker.hasCamera) ...[
-                BigButton(label: '방 전체 영상 찍기', emoji: 'video', color: p.accent, onTap: () => _video(take: true)),
+                TextField(
+                  controller: room,
+                  decoration: const InputDecoration(labelText: '방 (예: 거실, 안방)'),
+                ),
                 const SizedBox(height: 8),
+                TextField(
+                  controller: spot,
+                  decoration: const InputDecoration(labelText: '자리 (예: TV 옆 수납장)'),
+                ),
+                const SizedBox(height: AppSizes.gap),
+                TextField(
+                  controller: desc,
+                  minLines: 1,
+                  maxLines: 3,
+                  decoration: const InputDecoration(labelText: '설명 (예: 10년 된 커피 머신, 잘 작동함)'),
+                ),
+                const SizedBox(height: 8),
+                BigButton(
+                  label: '말로 설명하기',
+                  emoji: 'mic',
+                  color: p.progress,
+                  onTap: () async {
+                    final t = await listenOrType(context, title: '물건 설명', hint: '예: 10년 된 커피 머신, 잘 작동함', initial: desc.text);
+                    if (t != null) desc.text = t;
+                  },
+                ),
+                const SectionTitle('사진으로 등록'),
+                if (picker.hasCamera) ...[BigButton(label: '사진 찍기', emoji: 'camera', color: p.accent, onTap: _takePhoto), const SizedBox(height: 8)],
+                BigButton(label: picker.hasCamera ? '앨범에서 사진 고르기 (여러 장)' : '사진 파일 넣기 (여러 장)', emoji: 'folder', color: p.primary, onTap: _pickPhotos),
+                const SectionTitle('영상으로 한 번에 등록'),
+                if (picker.hasCamera) ...[
+                  BigButton(label: '방 전체 영상 찍기', emoji: 'video', color: p.accent, onTap: () => _video(take: true)),
+                  const SizedBox(height: 8),
+                ],
+                BigButton(label: '영상 파일 고르기', emoji: 'video', color: p.primary, onTap: () => _video(take: false)),
+                const SectionTitle('그 밖의 방법'),
+                BigButton(label: '이름만 적어서 등록', emoji: 'label', color: p.muted, onTap: _manual),
+                const SizedBox(height: 8),
+                BigButton(label: '제미나이 정리 글 가져오기', emoji: 'speech', color: p.muted, onTap: () => go(context, const ImportScreen())),
+                if (status.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 12), child: Text(status)),
               ],
-              BigButton(label: '영상 파일 고르기', emoji: 'video', color: p.primary, onTap: () => _video(take: false)),
-              const SectionTitle('그 밖의 방법'),
-              BigButton(label: '이름만 적어서 등록', emoji: 'label', color: p.muted, onTap: _manual),
-              const SizedBox(height: 8),
-              BigButton(label: '제미나이 정리 글 가져오기', emoji: 'speech', color: p.muted, onTap: () => go(context, const ImportScreen())),
-              if (status.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 12), child: Text(status)),
-            ]),
+            ),
     );
   }
 
   Widget _busyView(AppPalette p) => Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSizes.gapLarge),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Mascot(MascotMood.thinking, size: 140),
-            const SizedBox(height: AppSizes.gap),
-            Text(status, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: AppSizes.gap),
-            BigProgress(progress, label: '진행률'),
-            const SizedBox(height: 8),
-            Text('${(progress * 100).round()}%', style: Theme.of(context).textTheme.headlineMedium),
-            const SizedBox(height: AppSizes.gap),
-            BigButton(label: '취소', color: p.discard, onTap: () => setState(() => cancel?.cancel())),
-          ]),
-        ),
-      );
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSizes.gapLarge),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Mascot(MascotMood.thinking, size: 140),
+          const SizedBox(height: AppSizes.gap),
+          Text(status, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: AppSizes.gap),
+          BigProgress(progress, label: '진행률'),
+          const SizedBox(height: 8),
+          Text('${(progress * 100).round()}%', style: Theme.of(context).textTheme.headlineMedium),
+          const SizedBox(height: AppSizes.gap),
+          BigButton(label: '취소', color: p.discard, onTap: () => setState(() => cancel?.cancel())),
+        ],
+      ),
+    ),
+  );
 }

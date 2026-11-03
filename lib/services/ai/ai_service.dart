@@ -50,8 +50,7 @@ class AiService {
   }
 
   /// 사진 인식. 실패하면 AiException을 던져 화면이 "직접 이름 적기"로 넘어가게 합니다.
-  Future<AiOutcome<List<DetectedItem>>> recognize(int userId, UserSettings s, Uint8List jpeg,
-      {required int width, required int height, String? hint}) async {
+  Future<AiOutcome<List<DetectedItem>>> recognize(int userId, UserSettings s, Uint8List jpeg, {required int width, required int height, String? hint}) async {
     final p = providerFor(s);
     if (p.isPractice) {
       final r = await practice.recognize(jpeg, width: width, height: height, hint: hint);
@@ -88,14 +87,16 @@ class AiService {
   }
 
   /// 판매글·시세. 실패하면 기본 틀로 대신합니다.
-  Future<AiOutcome<ListingDraft>> writeListing(int userId, UserSettings s, Item item,
-      {Uint8List? jpeg, int width = 0, int height = 0}) async {
+  Future<AiOutcome<ListingDraft>> writeListing(int userId, UserSettings s, Item item, {Uint8List? jpeg, int width = 0, int height = 0}) async {
     final p = providerFor(s);
     if (p.isPractice) return AiOutcome((await practice.writeListing(item)).value, practice: true);
     try {
       final sendPhoto = s.sendPhotosToAi ? jpeg : null;
-      await _checkBudget(userId, s,
-          sendPhoto == null ? AiPricing.usdFor(inputTokens: 600, outputTokens: 700) : AiPricing.estimatePhotoUsd(width: width, height: height));
+      await _checkBudget(
+        userId,
+        s,
+        sendPhoto == null ? AiPricing.usdFor(inputTokens: 600, outputTokens: 700) : AiPricing.estimatePhotoUsd(width: width, height: height),
+      );
       final r = await p.writeListing(item, jpeg: sendPhoto, width: width, height: height);
       await _record(userId, r.usd, '판매글 작성');
       return AiOutcome(r.value, practice: false);

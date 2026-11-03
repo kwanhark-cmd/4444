@@ -9,15 +9,15 @@ enum TextSizeChoice { normal, large, huge }
 
 extension TextSizeScale on TextSizeChoice {
   double get scale => switch (this) {
-        TextSizeChoice.normal => 1.0,
-        TextSizeChoice.large => 1.25,
-        TextSizeChoice.huge => 1.5,
-      };
+    TextSizeChoice.normal => 1.0,
+    TextSizeChoice.large => 1.25,
+    TextSizeChoice.huge => 1.5,
+  };
   String get label => switch (this) {
-        TextSizeChoice.normal => '보통',
-        TextSizeChoice.large => '크게',
-        TextSizeChoice.huge => '아주 크게',
-      };
+    TextSizeChoice.normal => '보통',
+    TextSizeChoice.large => '크게',
+    TextSizeChoice.huge => '아주 크게',
+  };
 }
 
 /// 분류(지금 쓰는 것 / 판매 / 폐기)와 상태 색. 어디서나 같은 색.
@@ -124,10 +124,10 @@ class AppPalette {
   );
 
   static AppPalette of(ThemeModeChoice m) => switch (m) {
-        ThemeModeChoice.light => light,
-        ThemeModeChoice.dark => dark,
-        ThemeModeChoice.highContrast => highContrast,
-      };
+    ThemeModeChoice.light => light,
+    ThemeModeChoice.dark => dark,
+    ThemeModeChoice.highContrast => highContrast,
+  };
 }
 
 /// 크기·간격·둥글기
@@ -174,8 +174,7 @@ class AppThemeExt extends ThemeExtension<AppThemeExt> {
   final AppMotion motion;
   const AppThemeExt(this.palette, this.motion);
   @override
-  AppThemeExt copyWith({AppPalette? palette, AppMotion? motion}) =>
-      AppThemeExt(palette ?? this.palette, motion ?? this.motion);
+  AppThemeExt copyWith({AppPalette? palette, AppMotion? motion}) => AppThemeExt(palette ?? this.palette, motion ?? this.motion);
   @override
   AppThemeExt lerp(covariant AppThemeExt? other, double t) => other ?? this;
 }
@@ -201,7 +200,9 @@ ThemeData buildTheme(ThemeModeChoice mode, {bool reduceMotion = false}) {
     onSurface: p.onSurface,
   );
   final base = ThemeData(useMaterial3: true, colorScheme: scheme, fontFamily: appFont);
-  final text = base.textTheme.apply(bodyColor: p.onSurface, displayColor: p.onSurface, fontFamily: appFont).copyWith(
+  final text = base.textTheme
+      .apply(bodyColor: p.onSurface, displayColor: p.onSurface, fontFamily: appFont)
+      .copyWith(
         headlineMedium: base.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700, color: p.onSurface, fontSize: 26),
         titleLarge: base.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700, color: p.onSurface, fontSize: 22),
         titleMedium: base.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: p.onSurface, fontSize: 18),
@@ -246,17 +247,31 @@ ThemeData buildTheme(ThemeModeChoice mode, {bool reduceMotion = false}) {
       ),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(minimumSize: minSize, foregroundColor: p.primary, textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, fontFamily: appFont)),
+      style: TextButton.styleFrom(
+        minimumSize: minSize,
+        foregroundColor: p.primary,
+        textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, fontFamily: appFont),
+      ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: p.surface,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSizes.radiusSmall), borderSide: BorderSide(color: p.border, width: 2)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSizes.radiusSmall), borderSide: BorderSide(color: p.border, width: 2)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+        borderSide: BorderSide(color: p.border, width: 2),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+        borderSide: BorderSide(color: p.border, width: 2),
+      ),
       labelStyle: TextStyle(color: p.muted, fontSize: 17),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
-    cardTheme: CardThemeData(color: p.surface, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radius))),
+    cardTheme: CardThemeData(
+      color: p.surface,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radius)),
+    ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       contentTextStyle: const TextStyle(fontSize: 17, fontFamily: appFont, color: Colors.white),

@@ -36,12 +36,7 @@ _Resized _resize(Uint8List bytes) {
 
   final photo = fit(oriented, AppSizes.photoMaxSide);
   final thumb = fit(photo, AppSizes.thumb.toInt());
-  return _Resized(
-    Uint8List.fromList(img.encodeJpg(photo, quality: 85)),
-    Uint8List.fromList(img.encodeJpg(thumb, quality: 75)),
-    photo.width,
-    photo.height,
-  );
+  return _Resized(Uint8List.fromList(img.encodeJpg(photo, quality: 85)), Uint8List.fromList(img.encodeJpg(thumb, quality: 75)), photo.width, photo.height);
 }
 
 /// 사진을 줄여서 저장 (메모리·저장공간 절약). 원본은 선택 시에만 보관.

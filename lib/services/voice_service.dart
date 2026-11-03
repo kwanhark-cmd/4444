@@ -13,6 +13,7 @@ abstract class VoiceIO {
   bool get canListen;
   bool get canSpeak;
   Future<void> init();
+
   /// 한 번 듣고 글로 돌려줌 (취소·실패 시 null)
   Future<String?> listenOnce({Duration max = const Duration(seconds: 20)});
   Future<void> stopListening();
@@ -80,13 +81,7 @@ class DeviceVoice implements VoiceIO {
           last = r.recognizedWords;
           if (r.finalResult && !c.isCompleted) c.complete(last);
         },
-        listenOptions: SpeechListenOptions(
-          listenFor: max,
-          pauseFor: const Duration(seconds: 3),
-          partialResults: true,
-          cancelOnError: true,
-          localeId: 'ko_KR',
-        ),
+        listenOptions: SpeechListenOptions(listenFor: max, pauseFor: const Duration(seconds: 3), partialResults: true, cancelOnError: true, localeId: 'ko_KR'),
       );
     } catch (e) {
       log.warn('듣기 실패: $e');

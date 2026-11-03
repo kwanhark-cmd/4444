@@ -52,11 +52,7 @@ class VideoService {
   static const intervalMs = 2000;
   static const maxFrames = 20;
 
-  Future<List<String>> extractFrames(
-    String videoPath, {
-    void Function(double progress)? onProgress,
-    CancelToken? cancel,
-  }) async {
+  Future<List<String>> extractFrames(String videoPath, {void Function(double progress)? onProgress, CancelToken? cancel}) async {
     final out = <String>[];
     final stamp = DateTime.now().millisecondsSinceEpoch;
     for (var i = 0; i < maxFrames; i++) {
@@ -65,8 +61,7 @@ class VideoService {
       final ok = await extractor.frameAt(videoPath, i * intervalMs, path);
       if (!ok || !File(path).existsSync()) break;
       // 영상 끝을 넘으면 같은 장면이 반복됨 → 멈춤
-      if (out.isNotEmpty && File(out.last).lengthSync() == File(path).lengthSync() &&
-          _same(File(out.last).readAsBytesSync(), File(path).readAsBytesSync())) {
+      if (out.isNotEmpty && File(out.last).lengthSync() == File(path).lengthSync() && _same(File(out.last).readAsBytesSync(), File(path).readAsBytesSync())) {
         File(path).deleteSync();
         break;
       }

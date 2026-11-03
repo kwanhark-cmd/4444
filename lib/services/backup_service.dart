@@ -23,8 +23,7 @@ class BackupService {
   static final _kdf = Pbkdf2(macAlgorithm: Hmac.sha256(), iterations: 100000, bits: 256);
   static final _aes = AesGcm.with256bits();
 
-  Future<SecretKey> _key(String password, List<int> salt) =>
-      _kdf.deriveKey(secretKey: SecretKey(utf8.encode(password)), nonce: salt);
+  Future<SecretKey> _key(String password, List<int> salt) => _kdf.deriveKey(secretKey: SecretKey(utf8.encode(password)), nonce: salt);
 
   Future<Uint8List> createBytes(String password, {required String appVersion}) async {
     if (password.length < 4) throw UserFacingException('비밀번호는 4글자 이상으로 정해 주세요.');
@@ -79,7 +78,10 @@ class BackupService {
     final cipher = bytes.sublist(o);
     List<int> zip;
     try {
-      zip = await _aes.decrypt(SecretBox(cipher, nonce: nonce, mac: Mac(mac)), secretKey: await _key(password, salt));
+      zip = await _aes.decrypt(
+        SecretBox(cipher, nonce: nonce, mac: Mac(mac)),
+        secretKey: await _key(password, salt),
+      );
     } catch (_) {
       throw UserFacingException('비밀번호가 맞지 않아요.');
     }
@@ -92,8 +94,7 @@ class BackupService {
     if (v > dataVersion) throw UserFacingException('더 새 버전 앱에서 만든 백업이에요. 앱을 먼저 업데이트해 주세요.');
     final raw = jsonDecode(utf8.decode(dataFile.content)) as Map<String, dynamic>;
     final data = <String, List<Map<String, Object?>>>{
-      for (final t in Repository.backupTables)
-        t: ((raw[t] as List?) ?? const []).map((r) => Map<String, Object?>.from(r as Map)).toList(),
+      for (final t in Repository.backupTables) t: ((raw[t] as List?) ?? const []).map((r) => Map<String, Object?>.from(r as Map)).toList(),
     };
     // 지금 기기의 AI 키는 지키기
     final keepSecrets = (await repo.dumpAll())['settings']!.where((r) => secretSettingKeys.contains(r['key'])).toList();

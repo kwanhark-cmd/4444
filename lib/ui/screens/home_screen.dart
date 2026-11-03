@@ -61,11 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
             tooltip: '알림',
             iconSize: 30,
             onPressed: () => go(context, const NoticesScreen()),
-            icon: Badge(
-              isLabelVisible: s.unread.isNotEmpty,
-              label: Text('${s.unread.length}'),
-              child: const Icon(Icons.notifications_rounded),
-            ),
+            icon: Badge(isLabelVisible: s.unread.isNotEmpty, label: Text('${s.unread.length}'), child: const Icon(Icons.notifications_rounded)),
           ),
           IconButton(tooltip: '설정', iconSize: 30, onPressed: () => go(context, const SettingsScreen()), icon: const Icon(Icons.settings_rounded)),
         ],
@@ -105,7 +101,13 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: AppSizes.gap),
             Tile3D(emoji: 'chart', title: '진행 현황', subtitle: '얼마나 비웠는지 봐요', color: p.use, onTap: () => go(context, const ProgressScreen())),
             const SizedBox(height: AppSizes.gap),
-            Tile3D(emoji: 'package', title: '모든 물건', subtitle: '${st?.total ?? 0}개 · 찾기와 고치기', color: p.primary, onTap: () => go(context, const ItemListScreen())),
+            Tile3D(
+              emoji: 'package',
+              title: '모든 물건',
+              subtitle: '${st?.total ?? 0}개 · 찾기와 고치기',
+              color: p.primary,
+              onTap: () => go(context, const ItemListScreen()),
+            ),
           ],
         ),
       ),
@@ -131,49 +133,52 @@ class _TodayCard extends StatelessWidget {
         boxShadow: AppShadows.raised(p),
       ),
       clipBehavior: Clip.antiAlias,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Padding(
-          padding: const EdgeInsets.all(AppSizes.gap),
-          child: Row(children: [
-            const Emoji3D('calendar', size: 40),
-            const SizedBox(width: 10),
-            Expanded(child: Text('오늘 할 일', style: Theme.of(context).textTheme.titleLarge)),
-            IconButton(
-              tooltip: '읽어 주기',
-              iconSize: 32,
-              icon: const Icon(Icons.volume_up_rounded),
-              onPressed: () => s.say(s.todaySpeech()),
-            ),
-          ]),
-        ),
-        if (it == null)
-          EmptyState(
-            message: s.items.isEmpty ? '첫 물건을 찍어 보세요' : '정할 물건을 다 정했어요! 새 물건을 등록해 보세요.',
-            mood: s.items.isEmpty ? MascotMood.hello : MascotMood.celebrate,
-            buttonLabel: '첫 물건 찍기',
-            onButton: () => go(context, const RegisterScreen(autoStart: true)),
-          )
-        else ...[
-          GestureDetector(
-            onTap: () => go(context, ItemDetailScreen(itemId: it.id!)),
-            child: SizedBox(height: 220, child: ItemPhoto(it, height: 220, full: true)),
-          ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
           Padding(
             padding: const EdgeInsets.all(AppSizes.gap),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Text('오늘은 이 물건 하나만 정해 보세요', style: TextStyle(color: p.muted, fontSize: 16)),
-              Text(it.name, style: Theme.of(context).textTheme.headlineMedium),
-              if (it.aiSuggestion != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text('추천: ${it.aiSuggestion!.label} — ${it.aiReason}', style: const TextStyle(fontSize: 16)),
-                ),
-              const SizedBox(height: AppSizes.gap),
-              DecisionButtons(onPick: (d) => decideWithUndo(context, it, d)),
-            ]),
+            child: Row(
+              children: [
+                const Emoji3D('calendar', size: 40),
+                const SizedBox(width: 10),
+                Expanded(child: Text('오늘 할 일', style: Theme.of(context).textTheme.titleLarge)),
+                IconButton(tooltip: '읽어 주기', iconSize: 32, icon: const Icon(Icons.volume_up_rounded), onPressed: () => s.say(s.todaySpeech())),
+              ],
+            ),
           ),
+          if (it == null)
+            EmptyState(
+              message: s.items.isEmpty ? '첫 물건을 찍어 보세요' : '정할 물건을 다 정했어요! 새 물건을 등록해 보세요.',
+              mood: s.items.isEmpty ? MascotMood.hello : MascotMood.celebrate,
+              buttonLabel: '첫 물건 찍기',
+              onButton: () => go(context, const RegisterScreen(autoStart: true)),
+            )
+          else ...[
+            GestureDetector(
+              onTap: () => go(context, ItemDetailScreen(itemId: it.id!)),
+              child: SizedBox(height: 220, child: ItemPhoto(it, height: 220, full: true)),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(AppSizes.gap),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('오늘은 이 물건 하나만 정해 보세요', style: TextStyle(color: p.muted, fontSize: 16)),
+                  Text(it.name, style: Theme.of(context).textTheme.headlineMedium),
+                  if (it.aiSuggestion != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text('추천: ${it.aiSuggestion!.label} — ${it.aiReason}', style: const TextStyle(fontSize: 16)),
+                    ),
+                  const SizedBox(height: AppSizes.gap),
+                  DecisionButtons(onPick: (d) => decideWithUndo(context, it, d)),
+                ],
+              ),
+            ),
+          ],
         ],
-      ]),
+      ),
     );
   }
 }

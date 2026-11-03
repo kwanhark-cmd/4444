@@ -47,8 +47,7 @@ class AiPricing {
 
   static int imageTokens(int width, int height) => (width * height / 750).ceil();
 
-  static double usdFor({required int inputTokens, required int outputTokens}) =>
-      inputTokens * inputPerMTok / 1e6 + outputTokens * outputPerMTok / 1e6;
+  static double usdFor({required int inputTokens, required int outputTokens}) => inputTokens * inputPerMTok / 1e6 + outputTokens * outputPerMTok / 1e6;
 
   /// 사진 한 장 예상 비용
   static double estimatePhotoUsd({int width = 1568, int height = 1176}) =>

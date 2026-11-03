@@ -30,17 +30,19 @@ class ExportService {
       ..writeln('사연:')
       ..writeln(item.story.isEmpty ? '(없음)' : item.story);
     await File(p.join(dir.path, '사연.txt')).writeAsString(text.toString());
-    await File(p.join(dir.path, 'info.json')).writeAsString(const JsonEncoder.withIndent('  ').convert({
-      'name': item.name,
-      'kind': item.kind,
-      'room': item.room,
-      'spot': item.spot,
-      'story': item.story,
-      'description': item.description,
-      'decision': item.decision?.code,
-      'registeredAt': item.createdAt.toIso8601String(),
-      'exportedAt': now.toIso8601String(),
-    }));
+    await File(p.join(dir.path, 'info.json')).writeAsString(
+      const JsonEncoder.withIndent('  ').convert({
+        'name': item.name,
+        'kind': item.kind,
+        'room': item.room,
+        'spot': item.spot,
+        'story': item.story,
+        'description': item.description,
+        'decision': item.decision?.code,
+        'registeredAt': item.createdAt.toIso8601String(),
+        'exportedAt': now.toIso8601String(),
+      }),
+    );
     return dir;
   }
 

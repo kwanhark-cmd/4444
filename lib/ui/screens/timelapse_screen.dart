@@ -54,22 +54,38 @@ class _TimelapseScreenState extends State<TimelapseScreen> {
     final p = context.palette;
     return AppPage(
       title: '타임랩스',
-      body: ListView(padding: const EdgeInsets.all(AppSizes.page), children: [
-        const FirstTimeTip(id: 'timelapse', text: '같은 자리를 같은 방향에서 일주일에 한 번쯤 찍어 두면, 집이 비워지는 모습을 영상처럼 볼 수 있어요.'),
-        BigButton(label: '새 자리 사진 찍기', emoji: 'camera', color: p.accent, onTap: () => _addShot()),
-        const SizedBox(height: AppSizes.gap),
-        if (spots.isEmpty) const EmptyState(message: '아직 찍은 자리가 없어요.'),
-        for (final sp in spots)
-          Panel(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Text(sp, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 8),
-              BigButton(label: '이 자리 한 장 더 찍기', emoji: 'camera', color: p.primary, onTap: () => _addShot(spot: sp)),
-              const SizedBox(height: 8),
-              BigButton(label: '이어 보기', emoji: 'video', color: p.progress, onTap: () => go(context, TimelapsePlayer(spot: sp))),
-            ]),
-          ),
-      ]),
+      body: ListView(
+        padding: const EdgeInsets.all(AppSizes.page),
+        children: [
+          const FirstTimeTip(id: 'timelapse', text: '같은 자리를 같은 방향에서 일주일에 한 번쯤 찍어 두면, 집이 비워지는 모습을 영상처럼 볼 수 있어요.'),
+          BigButton(label: '새 자리 사진 찍기', emoji: 'camera', color: p.accent, onTap: () => _addShot()),
+          const SizedBox(height: AppSizes.gap),
+          if (spots.isEmpty) const EmptyState(message: '아직 찍은 자리가 없어요.'),
+          for (final sp in spots)
+            Panel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(sp, style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 8),
+                  BigButton(
+                    label: '이 자리 한 장 더 찍기',
+                    emoji: 'camera',
+                    color: p.primary,
+                    onTap: () => _addShot(spot: sp),
+                  ),
+                  const SizedBox(height: 8),
+                  BigButton(
+                    label: '이어 보기',
+                    emoji: 'video',
+                    color: p.progress,
+                    onTap: () => go(context, TimelapsePlayer(spot: sp)),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -135,32 +151,35 @@ class _TimelapsePlayerState extends State<TimelapsePlayer> {
     final ended = shots.isNotEmpty && index >= shots.length;
     return AppPage(
       title: widget.spot,
-      body: ListView(padding: const EdgeInsets.all(AppSizes.page), children: [
-        AspectRatio(
-          aspectRatio: 4 / 3,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppSizes.radius),
-            child: shots.isEmpty
-                ? const SizedBox()
-                : ended
-                    ? _Credits(stats: s.stats, spot: widget.spot)
-                    : AnimatedSwitcher(
-                        duration: context.motion.normal,
-                        child: ItemPhoto(
-                          Item(userId: 0, name: '', createdAt: DateTime(2000), photoPath: shots[index].path, thumbPath: shots[index].path),
-                          key: ValueKey(index),
-                          full: true,
-                        ),
+      body: ListView(
+        padding: const EdgeInsets.all(AppSizes.page),
+        children: [
+          AspectRatio(
+            aspectRatio: 4 / 3,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppSizes.radius),
+              child: shots.isEmpty
+                  ? const SizedBox()
+                  : ended
+                  ? _Credits(stats: s.stats, spot: widget.spot)
+                  : AnimatedSwitcher(
+                      duration: context.motion.normal,
+                      child: ItemPhoto(
+                        Item(userId: 0, name: '', createdAt: DateTime(2000), photoPath: shots[index].path, thumbPath: shots[index].path),
+                        key: ValueKey(index),
+                        full: true,
                       ),
+                    ),
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        if (shots.isNotEmpty && !ended) Text('${index + 1} / ${shots.length} · ${dateKo(shots[index].takenAt)}', style: const TextStyle(fontSize: 17)),
-        const SizedBox(height: AppSizes.gap),
-        BigButton(label: '처음부터 다시 보기', emoji: 'video', color: p.progress, onTap: () => setState(_play)),
-        const SizedBox(height: 8),
-        BigButton(label: making ? '만드는 중…' : '움직이는 그림으로 저장 (엔딩 크레딧 포함)', emoji: 'party', color: p.accent, onTap: making || shots.isEmpty ? null : _make),
-      ]),
+          const SizedBox(height: 8),
+          if (shots.isNotEmpty && !ended) Text('${index + 1} / ${shots.length} · ${dateKo(shots[index].takenAt)}', style: const TextStyle(fontSize: 17)),
+          const SizedBox(height: AppSizes.gap),
+          BigButton(label: '처음부터 다시 보기', emoji: 'video', color: p.progress, onTap: () => setState(_play)),
+          const SizedBox(height: 8),
+          BigButton(label: making ? '만드는 중…' : '움직이는 그림으로 저장 (엔딩 크레딧 포함)', emoji: 'party', color: p.accent, onTap: making || shots.isEmpty ? null : _make),
+        ],
+      ),
     );
   }
 }
@@ -171,21 +190,27 @@ class _Credits extends StatelessWidget {
   const _Credits({required this.stats, required this.spot});
   @override
   Widget build(BuildContext context) => Container(
-        color: Colors.black,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(16),
-        child: FittedBox(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text('🎬 집 비우기 대작전', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 12),
-            Text('장소: $spot', style: const TextStyle(color: Colors.white70, fontSize: 18)),
-            Text('판매 ${stats?.sold ?? 0}개 · 폐기 ${stats?.discarded ?? 0}개', style: const TextStyle(color: Colors.white, fontSize: 20)),
-            Text('판매 수입 ${won(stats?.income ?? 0)}', style: const TextStyle(color: Color(0xFFFFD54F), fontSize: 20)),
-            const SizedBox(height: 12),
-            const Text('감독·주연: 나   도움: 비우기 비서', style: TextStyle(color: Colors.white70, fontSize: 16)),
-          ]),
-        ),
-      );
+    color: Colors.black,
+    alignment: Alignment.center,
+    padding: const EdgeInsets.all(16),
+    child: FittedBox(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            '🎬 집 비우기 대작전',
+            style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 12),
+          Text('장소: $spot', style: const TextStyle(color: Colors.white70, fontSize: 18)),
+          Text('판매 ${stats?.sold ?? 0}개 · 폐기 ${stats?.discarded ?? 0}개', style: const TextStyle(color: Colors.white, fontSize: 20)),
+          Text('판매 수입 ${won(stats?.income ?? 0)}', style: const TextStyle(color: Color(0xFFFFD54F), fontSize: 20)),
+          const SizedBox(height: 12),
+          const Text('감독·주연: 나   도움: 비우기 비서', style: TextStyle(color: Colors.white70, fontSize: 16)),
+        ],
+      ),
+    ),
+  );
 }
 
 /// 엔딩 크레딧 그림 만들기 (한글 글꼴 사용)
@@ -197,7 +222,10 @@ Future<Uint8List> renderCredits(ProgressStats? st, String spot, String userName)
   var y = 60.0;
   void line(String t, double size, Color color) {
     final tp = TextPainter(
-      text: TextSpan(text: t, style: TextStyle(fontFamily: appFont, fontSize: size, color: color, fontWeight: FontWeight.w700)),
+      text: TextSpan(
+        text: t,
+        style: TextStyle(fontFamily: appFont, fontSize: size, color: color, fontWeight: FontWeight.w700),
+      ),
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.center,
     )..layout(maxWidth: w - 40);

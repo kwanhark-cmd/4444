@@ -20,8 +20,7 @@ class ClaudeAi implements AiProvider {
   final http.Client client;
   final Duration timeout;
 
-  ClaudeAi({required this.apiKey, http.Client? client, this.timeout = const Duration(seconds: 90)})
-      : client = client ?? http.Client();
+  ClaudeAi({required this.apiKey, http.Client? client, this.timeout = const Duration(seconds: 90)}) : client = client ?? http.Client();
 
   @override
   String get name => 'Claude';
@@ -33,7 +32,10 @@ class ClaudeAi implements AiProvider {
       'use(지금 쓰는 것), sell(판매), discard(폐기). 보관이나 보류는 없다. 모든 글은 쉬운 한국어로 쓴다. '
       '가격은 한국 중고거래(당근마켓·번개장터) 기준 원 단위 정수로 추정한다.';
 
-  static const _decision = {'type': 'string', 'enum': ['use', 'sell', 'discard']};
+  static const _decision = {
+    'type': 'string',
+    'enum': ['use', 'sell', 'discard'],
+  };
 
   static final _recognizeSchema = {
     'type': 'object',
@@ -62,7 +64,10 @@ class ClaudeAi implements AiProvider {
     'type': 'object',
     'additionalProperties': false,
     'required': ['decision', 'reason'],
-    'properties': {'decision': _decision, 'reason': {'type': 'string'}},
+    'properties': {
+      'decision': _decision,
+      'reason': {'type': 'string'},
+    },
   };
 
   static final _listingSchema = {
@@ -79,9 +84,9 @@ class ClaudeAi implements AiProvider {
   };
 
   Map<String, Object?> _image(Uint8List jpeg) => {
-        'type': 'image',
-        'source': {'type': 'base64', 'media_type': 'image/jpeg', 'data': base64Encode(jpeg)},
-      };
+    'type': 'image',
+    'source': {'type': 'base64', 'media_type': 'image/jpeg', 'data': base64Encode(jpeg)},
+  };
 
   Future<(Map<String, dynamic>, double)> _call(List<Map<String, Object?>> content, Map<String, Object?> schema) async {
     if (apiKey.trim().isEmpty) throw AiException(AiErrorKind.noKey);
@@ -101,14 +106,16 @@ class ClaudeAi implements AiProvider {
     http.Response res;
     try {
       res = await client
-          .post(Uri.parse(endpoint),
-              headers: {
-                'x-api-key': apiKey.trim(),
-                'anthropic-version': apiVersion,
-                'anthropic-beta': 'server-side-fallback-2026-07-01',
-                'content-type': 'application/json',
-              },
-              body: body)
+          .post(
+            Uri.parse(endpoint),
+            headers: {
+              'x-api-key': apiKey.trim(),
+              'anthropic-version': apiVersion,
+              'anthropic-beta': 'server-side-fallback-2026-07-01',
+              'content-type': 'application/json',
+            },
+            body: body,
+          )
           .timeout(timeout);
     } on TimeoutException {
       throw AiException(AiErrorKind.timeout);
@@ -128,16 +135,9 @@ class ClaudeAi implements AiProvider {
       throw AiException(AiErrorKind.recognitionFailed);
     }
     final usage = (json['usage'] as Map?) ?? const {};
-    final usd = AiPricing.usdFor(
-      inputTokens: (usage['input_tokens'] as num?)?.toInt() ?? 0,
-      outputTokens: (usage['output_tokens'] as num?)?.toInt() ?? 0,
-    );
+    final usd = AiPricing.usdFor(inputTokens: (usage['input_tokens'] as num?)?.toInt() ?? 0, outputTokens: (usage['output_tokens'] as num?)?.toInt() ?? 0);
     if (json['stop_reason'] == 'refusal') throw AiException(AiErrorKind.refused);
-    final text = ((json['content'] as List?) ?? const [])
-        .whereType<Map>()
-        .where((b) => b['type'] == 'text')
-        .map((b) => b['text'] as String? ?? '')
-        .join();
+    final text = ((json['content'] as List?) ?? const []).whereType<Map>().where((b) => b['type'] == 'text').map((b) => b['text'] as String? ?? '').join();
     try {
       return (jsonDecode(text) as Map<String, dynamic>, usd);
     } catch (_) {
@@ -153,20 +153,23 @@ class ClaudeAi implements AiProvider {
       _image(jpeg),
       {
         'type': 'text',
-        'text': '이 사진에 보이는 물건을 하나씩 골라 목록으로 만들어 줘. 물건마다 이름, 종류, 보이는 상태, '
+        'text':
+            '이 사진에 보이는 물건을 하나씩 골라 목록으로 만들어 줘. 물건마다 이름, 종류, 보이는 상태, '
             '세 가지 분류 추천(use/sell/discard)과 짧은 이유를 적어 줘. 너무 작은 물건은 묶어서 하나로 적어도 돼.'
             '${hint == null || hint.isEmpty ? '' : ' 사용자 설명: "$hint"'}',
       },
     ], _recognizeSchema);
     final list = ((j['items'] as List?) ?? const [])
         .whereType<Map>()
-        .map((m) => DetectedItem(
-              name: (m['name'] as String?)?.trim() ?? '',
-              kind: (m['kind'] as String?) ?? '',
-              condition: (m['condition'] as String?) ?? '',
-              suggestion: _d(m['suggestion']),
-              reason: (m['reason'] as String?) ?? '',
-            ))
+        .map(
+          (m) => DetectedItem(
+            name: (m['name'] as String?)?.trim() ?? '',
+            kind: (m['kind'] as String?) ?? '',
+            condition: (m['condition'] as String?) ?? '',
+            suggestion: _d(m['suggestion']),
+            reason: (m['reason'] as String?) ?? '',
+          ),
+        )
         .where((d) => d.name.isNotEmpty)
         .toList();
     if (list.isEmpty) throw AiException(AiErrorKind.recognitionFailed);
@@ -178,7 +181,8 @@ class ClaudeAi implements AiProvider {
     final (j, usd) = await _call([
       {
         'type': 'text',
-        'text': '물건: ${item.name}\n종류: ${item.kind}\n상태: ${item.condition}\n설명: ${item.description}\n사연: ${item.story}\n'
+        'text':
+            '물건: ${item.name}\n종류: ${item.kind}\n상태: ${item.condition}\n설명: ${item.description}\n사연: ${item.story}\n'
             '이 물건을 use/sell/discard 중 하나로 추천하고 이유를 한 문장으로 적어 줘.',
       },
     ], _suggestSchema);
@@ -192,7 +196,8 @@ class ClaudeAi implements AiProvider {
       if (jpeg != null) _image(jpeg),
       {
         'type': 'text',
-        'text': '당근마켓·번개장터에 올릴 판매글을 써 줘. 물건: ${item.name}, 종류: ${item.kind}, 상태: ${item.condition}, '
+        'text':
+            '당근마켓·번개장터에 올릴 판매글을 써 줘. 물건: ${item.name}, 종류: ${item.kind}, 상태: ${item.condition}, '
             '설명: ${item.description}. 제목은 짧게, 본문은 상태·거래 방법을 쉽게. 카테고리 이름과 '
             '중고 시세 범위(price_low, price_high, 원)를 추정해 줘. 과장하지 마.',
       },

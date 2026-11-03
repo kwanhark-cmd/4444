@@ -20,56 +20,73 @@ class ProgressScreen extends StatelessWidget {
     final st = s.stats;
     if (st == null) return const AppPage(title: '진행 현황', body: SizedBox());
     Widget number(String label, String value, Color color, String emoji, VoidCallback? tap) => Pressable(
-          onTap: tap,
-          semanticLabel: '$label $value',
-          builder: (context, pressed) => Container(
-            padding: const EdgeInsets.all(AppSizes.gap),
-            decoration: BoxDecoration(
-              color: p.surface,
-              borderRadius: BorderRadius.circular(AppSizes.radius),
-              border: Border.all(color: color, width: AppSizes.cardBorder),
-              boxShadow: AppShadows.raised(p, pressed: pressed),
+      onTap: tap,
+      semanticLabel: '$label $value',
+      builder: (context, pressed) => Container(
+        padding: const EdgeInsets.all(AppSizes.gap),
+        decoration: BoxDecoration(
+          color: p.surface,
+          borderRadius: BorderRadius.circular(AppSizes.radius),
+          border: Border.all(color: color, width: AppSizes.cardBorder),
+          boxShadow: AppShadows.raised(p, pressed: pressed),
+        ),
+        child: Row(
+          children: [
+            Emoji3D(emoji, size: 44),
+            const SizedBox(width: 12),
+            Expanded(child: Text(label, style: Theme.of(context).textTheme.titleMedium)),
+            Flexible(
+              child: Text(
+                value,
+                textAlign: TextAlign.end,
+                style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: p.onSurface),
+              ),
             ),
-            child: Row(children: [
-              Emoji3D(emoji, size: 44),
-              const SizedBox(width: 12),
-              Expanded(child: Text(label, style: Theme.of(context).textTheme.titleMedium)),
-              Flexible(child: Text(value, textAlign: TextAlign.end, style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: p.onSurface))),
-            ]),
-          ),
-        );
+          ],
+        ),
+      ),
+    );
     final ratio = st.emptiedRatio;
     return AppPage(
       title: '진행 현황',
-      body: ListView(padding: const EdgeInsets.all(AppSizes.page), children: [
-        Panel(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text('비우기 진행', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text('${(ratio * 100).round()}%', style: TextStyle(fontSize: 48, fontWeight: FontWeight.w700, color: p.progress)),
-            BigProgress(ratio, label: '비우기 진행'),
-            const SizedBox(height: 6),
-            Text('판매·폐기로 정한 ${st.sell + st.discard}개 중 ${st.done}개를 비웠어요', style: const TextStyle(fontSize: 16)),
-          ]),
-        ),
-        BigButton(label: '음성으로 듣기', emoji: 'speaker', color: p.progress, onTap: () => s.say(s.progressSpeech())),
-        const SizedBox(height: AppSizes.gap),
-        number('전체 물건', '${st.total}개', p.primary, 'package', () => go(context, const ItemListScreen())),
-        const SizedBox(height: 10),
-        number('아직 안 정함', '${st.undecided}개', p.attention, 'hourglass', () => go(context, const ItemListScreen(undecided: true))),
-        const SizedBox(height: 10),
-        number('지금 쓰는 것', '${st.use}개', p.use, 'use', () => go(context, const ItemListScreen(initial: Decision.use))),
-        const SizedBox(height: 10),
-        number('판매 완료', '${st.sold} / ${st.sell}개', p.sell, 'sell', () => go(context, const ItemListScreen(initial: Decision.sell))),
-        const SizedBox(height: 10),
-        number('폐기 완료', '${st.discarded} / ${st.discard}개', p.discard, 'discard', () => go(context, const ItemListScreen(initial: Decision.discard))),
-        const SizedBox(height: 10),
-        number('판매 수입', won(st.income), p.sell, 'party', null),
-        const SizedBox(height: 10),
-        number('팔 물건 예상 가치', won(st.estimatedValue), p.accent, 'chart', null),
-        const SizedBox(height: AppSizes.gap),
-        BigButton(label: '집 비우기 타임랩스', emoji: 'video', color: p.accent, onTap: () => go(context, const TimelapseScreen())),
-      ]),
+      body: ListView(
+        padding: const EdgeInsets.all(AppSizes.page),
+        children: [
+          Panel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('비우기 진행', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 8),
+                Text(
+                  '${(ratio * 100).round()}%',
+                  style: TextStyle(fontSize: 48, fontWeight: FontWeight.w700, color: p.progress),
+                ),
+                BigProgress(ratio, label: '비우기 진행'),
+                const SizedBox(height: 6),
+                Text('판매·폐기로 정한 ${st.sell + st.discard}개 중 ${st.done}개를 비웠어요', style: const TextStyle(fontSize: 16)),
+              ],
+            ),
+          ),
+          BigButton(label: '음성으로 듣기', emoji: 'speaker', color: p.progress, onTap: () => s.say(s.progressSpeech())),
+          const SizedBox(height: AppSizes.gap),
+          number('전체 물건', '${st.total}개', p.primary, 'package', () => go(context, const ItemListScreen())),
+          const SizedBox(height: 10),
+          number('아직 안 정함', '${st.undecided}개', p.attention, 'hourglass', () => go(context, const ItemListScreen(undecided: true))),
+          const SizedBox(height: 10),
+          number('지금 쓰는 것', '${st.use}개', p.use, 'use', () => go(context, const ItemListScreen(initial: Decision.use))),
+          const SizedBox(height: 10),
+          number('판매 완료', '${st.sold} / ${st.sell}개', p.sell, 'sell', () => go(context, const ItemListScreen(initial: Decision.sell))),
+          const SizedBox(height: 10),
+          number('폐기 완료', '${st.discarded} / ${st.discard}개', p.discard, 'discard', () => go(context, const ItemListScreen(initial: Decision.discard))),
+          const SizedBox(height: 10),
+          number('판매 수입', won(st.income), p.sell, 'party', null),
+          const SizedBox(height: 10),
+          number('팔 물건 예상 가치', won(st.estimatedValue), p.accent, 'chart', null),
+          const SizedBox(height: AppSizes.gap),
+          BigButton(label: '집 비우기 타임랩스', emoji: 'video', color: p.accent, onTap: () => go(context, const TimelapseScreen())),
+        ],
+      ),
     );
   }
 }

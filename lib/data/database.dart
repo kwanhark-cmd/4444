@@ -62,10 +62,6 @@ Future<void> _runFrom(Database db, int from, int to) async {
 Future<Database> openAppDatabase(DatabaseFactory factory, String path, {int version = dataVersion}) {
   return factory.openDatabase(
     path,
-    options: OpenDatabaseOptions(
-      version: version,
-      onCreate: (db, v) => _runFrom(db, 0, v),
-      onUpgrade: (db, oldV, newV) => _runFrom(db, oldV, newV),
-    ),
+    options: OpenDatabaseOptions(version: version, onCreate: (db, v) => _runFrom(db, 0, v), onUpgrade: (db, oldV, newV) => _runFrom(db, oldV, newV)),
   );
 }

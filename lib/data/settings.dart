@@ -10,6 +10,7 @@ class GlobalSettings {
   bool sound;
   bool onboarded;
   int? currentUserId;
+
   /// 앱이 본 가장 늦은 시각. 기기 시간이 뒤로 가도 날짜 계산이 꼬이지 않게 함.
   DateTime? latestSeen;
 
@@ -26,8 +27,7 @@ class GlobalSettings {
 
   static Future<GlobalSettings> load(Repository r) async {
     final m = await r.allSettings(Repository.globalUser);
-    T pick<T extends Enum>(List<T> values, String? s, T def) =>
-        values.firstWhere((v) => v.name == s, orElse: () => def);
+    T pick<T extends Enum>(List<T> values, String? s, T def) => values.firstWhere((v) => v.name == s, orElse: () => def);
     return GlobalSettings(
       textSize: pick(TextSizeChoice.values, m['textSize'], TextSizeChoice.normal),
       theme: pick(ThemeModeChoice.values, m['theme'], ThemeModeChoice.light),
@@ -36,9 +36,7 @@ class GlobalSettings {
       sound: m['sound'] != '0',
       onboarded: m['onboarded'] == '1',
       currentUserId: int.tryParse(m['currentUserId'] ?? ''),
-      latestSeen: int.tryParse(m['latestSeen'] ?? '') == null
-          ? null
-          : DateTime.fromMillisecondsSinceEpoch(int.parse(m['latestSeen']!)),
+      latestSeen: int.tryParse(m['latestSeen'] ?? '') == null ? null : DateTime.fromMillisecondsSinceEpoch(int.parse(m['latestSeen']!)),
     );
   }
 

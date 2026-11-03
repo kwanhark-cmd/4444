@@ -42,7 +42,8 @@ class DeviceNotifier implements Notifier {
       } catch (_) {
         tz.setLocalLocation(tz.getLocation('Asia/Seoul'));
       }
-      _ok = await _plugin.initialize(
+      _ok =
+          await _plugin.initialize(
             settings: const InitializationSettings(
               android: AndroidInitializationSettings('@mipmap/ic_launcher'),
               macOS: DarwinInitializationSettings(requestAlertPermission: false, requestBadgePermission: false, requestSoundPermission: false),
@@ -70,7 +71,8 @@ class DeviceNotifier implements Notifier {
         return await _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission() ?? false;
       }
       if (Platform.isMacOS) {
-        return await _plugin.resolvePlatformSpecificImplementation<MacOSFlutterLocalNotificationsPlugin>()?.requestPermissions(alert: true, sound: true) ?? false;
+        return await _plugin.resolvePlatformSpecificImplementation<MacOSFlutterLocalNotificationsPlugin>()?.requestPermissions(alert: true, sound: true) ??
+            false;
       }
       if (Platform.isIOS) {
         return await _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()?.requestPermissions(alert: true, sound: true) ?? false;

@@ -27,8 +27,13 @@ Future<void> main() async {
       return true;
     };
     ErrorWidget.builder = (d) => const Material(
-          child: Center(child: Padding(padding: EdgeInsets.all(24), child: Text('이 부분을 보여 주지 못했어요. 뒤로 가서 다시 해 보세요.', textAlign: TextAlign.center))),
-        );
+      child: Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text('이 부분을 보여 주지 못했어요. 뒤로 가서 다시 해 보세요.', textAlign: TextAlign.center),
+        ),
+      ),
+    );
 
     final DatabaseFactory factory;
     if (Platform.isWindows || Platform.isLinux) {

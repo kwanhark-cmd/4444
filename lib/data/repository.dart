@@ -10,8 +10,7 @@ class Repository {
   static const int globalUser = 0;
 
   // ---------- 사용자 ----------
-  Future<List<AppUser>> users() async =>
-      (await db.query('users', orderBy: 'id')).map(AppUser.fromMap).toList();
+  Future<List<AppUser>> users() async => (await db.query('users', orderBy: 'id')).map(AppUser.fromMap).toList();
 
   Future<AppUser> createUser(String name, DateTime now) async {
     final id = await db.insert('users', {'name': name, 'created_at': now.millisecondsSinceEpoch});
@@ -40,11 +39,8 @@ class Repository {
     return {for (final m in r) m['key'] as String: (m['value'] as String?) ?? ''};
   }
 
-  Future<void> setSetting(int userId, String key, String? value) => db.insert(
-        'settings',
-        {'user_id': userId, 'key': key, 'value': value},
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+  Future<void> setSetting(int userId, String key, String? value) =>
+      db.insert('settings', {'user_id': userId, 'key': key, 'value': value}, conflictAlgorithm: ConflictAlgorithm.replace);
 
   // ---------- 물건 ----------
   Future<int> insertItem(Item item) async {
@@ -53,8 +49,7 @@ class Repository {
     return id;
   }
 
-  Future<void> updateItem(Item item) =>
-      db.update('items', item.toMap(), where: 'id=? AND user_id=?', whereArgs: [item.id, item.userId]);
+  Future<void> updateItem(Item item) => db.update('items', item.toMap(), where: 'id=? AND user_id=?', whereArgs: [item.id, item.userId]);
 
   Future<void> deleteItem(int userId, int id) => db.delete('items', where: 'id=? AND user_id=?', whereArgs: [id, userId]);
 
@@ -92,12 +87,8 @@ class Repository {
       discard: c((i) => i.decision == Decision.discard),
       sold: c((i) => i.decision == Decision.sell && i.saleStatus == SaleStatus.sold),
       discarded: c((i) => i.decision == Decision.discard && i.discardDoneAt != null),
-      income: all
-          .where((i) => i.saleStatus == SaleStatus.sold)
-          .fold(0, (s, i) => s + (i.soldPrice ?? i.price ?? 0)),
-      estimatedValue: all
-          .where((i) => i.decision == Decision.sell && i.saleStatus != SaleStatus.sold)
-          .fold(0, (s, i) => s + (i.price ?? i.priceHigh ?? 0)),
+      income: all.where((i) => i.saleStatus == SaleStatus.sold).fold(0, (s, i) => s + (i.soldPrice ?? i.price ?? 0)),
+      estimatedValue: all.where((i) => i.decision == Decision.sell && i.saleStatus != SaleStatus.sold).fold(0, (s, i) => s + (i.price ?? i.priceHigh ?? 0)),
     );
   }
 
@@ -105,19 +96,23 @@ class Repository {
   Future<int> addNotice(Notice n) => db.insert('notices', n.toMap()..remove('id'));
 
   Future<List<Notice>> notices(int userId, {bool unreadOnly = false}) async {
-    final r = await db.query('notices',
-        where: unreadOnly ? 'user_id=? AND read_at IS NULL' : 'user_id=?',
-        whereArgs: [userId],
-        orderBy: 'created_at DESC, id DESC',
-        limit: 200);
+    final r = await db.query(
+      'notices',
+      where: unreadOnly ? 'user_id=? AND read_at IS NULL' : 'user_id=?',
+      whereArgs: [userId],
+      orderBy: 'created_at DESC, id DESC',
+      limit: 200,
+    );
     return r.map(Notice.fromMap).toList();
   }
 
   Future<bool> hasNoticeSince(int userId, String kind, DateTime since, {int? itemId}) async {
-    final r = await db.query('notices',
-        where: 'user_id=? AND kind=? AND created_at>=?${itemId != null ? ' AND item_id=?' : ''}',
-        whereArgs: [userId, kind, since.millisecondsSinceEpoch, ?itemId],
-        limit: 1);
+    final r = await db.query(
+      'notices',
+      where: 'user_id=? AND kind=? AND created_at>=?${itemId != null ? ' AND item_id=?' : ''}',
+      whereArgs: [userId, kind, since.millisecondsSinceEpoch, ?itemId],
+      limit: 1,
+    );
     return r.isNotEmpty;
   }
 
@@ -142,10 +137,12 @@ class Repository {
   Future<int> addShot(TimelapseShot s) => db.insert('timelapse', s.toMap()..remove('id'));
 
   Future<List<TimelapseShot>> shots(int userId, {String? spot}) async {
-    final r = await db.query('timelapse',
-        where: spot == null ? 'user_id=?' : 'user_id=? AND spot=?',
-        whereArgs: [userId, ?spot],
-        orderBy: 'taken_at ASC, id ASC');
+    final r = await db.query(
+      'timelapse',
+      where: spot == null ? 'user_id=?' : 'user_id=? AND spot=?',
+      whereArgs: [userId, ?spot],
+      orderBy: 'taken_at ASC, id ASC',
+    );
     return r.map(TimelapseShot.fromMap).toList();
   }
 
@@ -157,9 +154,7 @@ class Repository {
   // ---------- 백업용 전체 내보내기/가져오기 ----------
   static const backupTables = ['users', 'settings', 'items', 'notices', 'costs', 'timelapse'];
 
-  Future<Map<String, List<Map<String, Object?>>>> dumpAll() async => {
-        for (final t in backupTables) t: await db.query(t),
-      };
+  Future<Map<String, List<Map<String, Object?>>>> dumpAll() async => {for (final t in backupTables) t: await db.query(t)};
 
   Future<void> restoreAll(Map<String, List<Map<String, Object?>>> data) async {
     await db.transaction((t) async {

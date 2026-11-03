@@ -150,10 +150,10 @@ Decision ruleSuggest(Item item) {
 }
 
 String ruleReason(Decision d) => switch (d) {
-      Decision.use => '자주 쓰는 물건으로 보여요. 지금 쓰는 것으로 두세요.',
-      Decision.sell => '아직 쓸 만해 보여요. 팔면 다른 사람이 잘 쓸 수 있어요.',
-      Decision.discard => '팔기 어렵거나 오래돼 보여요. 비우는 것을 추천해요.',
-    };
+  Decision.use => '자주 쓰는 물건으로 보여요. 지금 쓰는 것으로 두세요.',
+  Decision.sell => '아직 쓸 만해 보여요. 팔면 다른 사람이 잘 쓸 수 있어요.',
+  Decision.discard => '팔기 어렵거나 오래돼 보여요. 비우는 것을 추천해요.',
+};
 
 /// 애매할 때 결정을 돕는 짧은 질문 (예라고 하면 해당 분류 쪽으로)
 class HelpQuestion {

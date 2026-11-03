@@ -16,13 +16,13 @@ class Emoji3D extends StatelessWidget {
   const Emoji3D(this.name, {super.key, this.size = AppSizes.tileIcon});
   @override
   Widget build(BuildContext context) => Image.asset(
-        'assets/emoji/$name.png',
-        width: size,
-        height: size,
-        cacheWidth: (size * 2).round(),
-        errorBuilder: (_, _, _) => SizedBox(width: size, height: size),
-        excludeFromSemantics: true,
-      );
+    'assets/emoji/$name.png',
+    width: size,
+    height: size,
+    cacheWidth: (size * 2).round(),
+    errorBuilder: (_, _, _) => SizedBox(width: size, height: size),
+    excludeFromSemantics: true,
+  );
 }
 
 enum MascotMood { hello, thinking, recommend, caution, celebrate }
@@ -70,12 +70,7 @@ class _PressableState extends State<Pressable> {
                 feedback(context);
                 widget.onTap!();
               },
-        child: AnimatedScale(
-          scale: _down ? 0.96 : 1,
-          duration: m.fast,
-          curve: Curves.easeOutBack,
-          child: widget.builder(context, _down),
-        ),
+        child: AnimatedScale(scale: _down ? 0.96 : 1, duration: m.fast, curve: Curves.easeOutBack, child: widget.builder(context, _down)),
       ),
     );
   }
@@ -98,43 +93,54 @@ class Tile3D extends StatelessWidget {
       onTap: onTap,
       builder: (context, pressed) => AnimatedContainer(
         duration: context.motion.fast,
-        transform: Matrix4.translationValues(0, pressed ? AppSizes.depth - 1 : 0, 0),
+        // 바깥 색 층 = 두께(3D). 누르면 두께가 줄어 눌린 느낌.
+        margin: EdgeInsets.only(top: pressed ? AppSizes.depth - 1 : 0),
+        padding: EdgeInsets.only(bottom: pressed ? 1 : AppSizes.depth),
         decoration: BoxDecoration(
-          color: p.surface,
+          color: color,
           borderRadius: BorderRadius.circular(AppSizes.radius),
-          border: Border(bottom: BorderSide(color: color, width: pressed ? 1 : AppSizes.depth), top: BorderSide(color: color.withValues(alpha: 0.35), width: 2), left: BorderSide(color: color.withValues(alpha: 0.35), width: 2), right: BorderSide(color: color.withValues(alpha: 0.35), width: 2)),
           boxShadow: AppShadows.raised(p, pressed: pressed),
         ),
-        padding: const EdgeInsets.all(AppSizes.gap),
-        child: Row(
-          children: [
-            Transform(
-              alignment: Alignment.center,
-              transform: Matrix4.identity()
-                ..setEntry(3, 2, 0.002)
-                ..rotateX(pressed ? 0 : -0.15)
-                ..rotateY(pressed ? 0 : 0.15),
-              child: Emoji3D(emoji),
-            ),
-            const SizedBox(width: AppSizes.gap),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: p.muted)),
-                ],
+        child: Container(
+          decoration: BoxDecoration(
+            color: p.surface,
+            borderRadius: BorderRadius.circular(AppSizes.radius),
+            border: Border.all(color: color.withValues(alpha: 0.5), width: 2),
+          ),
+          padding: const EdgeInsets.all(AppSizes.gap),
+          child: Row(
+            children: [
+              Transform(
+                alignment: Alignment.center,
+                transform: Matrix4.identity()
+                  ..setEntry(3, 2, 0.002)
+                  ..rotateX(pressed ? 0 : -0.15)
+                  ..rotateY(pressed ? 0 : 0.15),
+                child: Emoji3D(emoji),
               ),
-            ),
-            if (badge != null)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: p.attention, borderRadius: BorderRadius.circular(20)),
-                child: Text(badge!, style: TextStyle(color: p.onAttention, fontWeight: FontWeight.w700)),
+              const SizedBox(width: AppSizes.gap),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 2),
+                    Text(subtitle, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: p.muted)),
+                  ],
+                ),
               ),
-            Icon(Icons.chevron_right, color: p.muted, size: 32),
-          ],
+              if (badge != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: p.attention, borderRadius: BorderRadius.circular(20)),
+                  child: Text(
+                    badge!,
+                    style: TextStyle(color: p.onAttention, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              Icon(Icons.chevron_right, color: p.muted, size: 32),
+            ],
+          ),
         ),
       ),
     );
@@ -162,26 +168,32 @@ class BigButton extends StatelessWidget {
       builder: (context, pressed) => AnimatedContainer(
         duration: context.motion.fast,
         constraints: const BoxConstraints(minHeight: AppSizes.buttonMinHeight, minWidth: AppSizes.touchMin),
-        transform: Matrix4.translationValues(0, pressed ? 3 : 0, 0),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        margin: EdgeInsets.only(top: pressed ? 3 : 0),
+        padding: EdgeInsets.only(bottom: pressed ? 1 : 4),
         decoration: BoxDecoration(
-          color: bg,
+          color: Color.lerp(bg, Colors.black, 0.35),
           borderRadius: BorderRadius.circular(AppSizes.radius),
-          border: Border(bottom: BorderSide(color: Color.lerp(bg, Colors.black, 0.35)!, width: pressed ? 1 : 4)),
           boxShadow: onTap == null ? null : AppShadows.raised(p, pressed: pressed),
         ),
-        child: Row(
-          mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (emoji != null) ...[Emoji3D(emoji!, size: 32), const SizedBox(width: 10)],
-            if (icon != null) ...[Icon(icon, color: fg, size: 28), const SizedBox(width: 10)],
-            Flexible(
-              child: Text(label,
+        child: Container(
+          constraints: BoxConstraints(minHeight: AppSizes.buttonMinHeight - (pressed ? 1 : 4)),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AppSizes.radius)),
+          child: Row(
+            mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (emoji != null) ...[Emoji3D(emoji!, size: 32), const SizedBox(width: 10)],
+              if (icon != null) ...[Icon(icon, color: fg, size: 28), const SizedBox(width: 10)],
+              Flexible(
+                child: Text(
+                  label,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: fg, fontSize: 18, fontWeight: FontWeight.w700, fontFamily: appFont)),
-            ),
-          ],
+                  style: TextStyle(color: fg, fontSize: 18, fontWeight: FontWeight.w700, fontFamily: appFont),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -206,12 +218,7 @@ class DecisionButton extends StatelessWidget {
   final bool compact;
   const DecisionButton(this.decision, {super.key, required this.onTap, this.compact = false});
   @override
-  Widget build(BuildContext context) => BigButton(
-        label: decision.label,
-        emoji: decision.emoji,
-        color: decisionColor(context, decision),
-        onTap: onTap,
-      );
+  Widget build(BuildContext context) => BigButton(label: decision.label, emoji: decision.emoji, color: decisionColor(context, decision), onTap: onTap);
 }
 
 /// 분류 세 버튼 (작은 화면에서는 세로로)
@@ -220,17 +227,34 @@ class DecisionButtons extends StatelessWidget {
   const DecisionButtons({super.key, required this.onPick});
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, c) {
-      final scale = MediaQuery.textScalerOf(context).scale(1);
-      final row = c.maxWidth > 560 && scale < 1.3;
-      final buttons = [
-        for (final d in [Decision.use, Decision.sell, Decision.discard]) DecisionButton(d, onTap: () => onPick(d)),
-      ];
-      if (row) {
-        return Row(children: [for (final b in buttons) Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: b))]);
-      }
-      return Column(children: [for (final b in buttons) Padding(padding: const EdgeInsets.only(bottom: AppSizes.gapSmall), child: b)]);
-    });
+    return LayoutBuilder(
+      builder: (context, c) {
+        final scale = MediaQuery.textScalerOf(context).scale(1);
+        final row = c.maxWidth > 560 && scale < 1.3;
+        final buttons = [
+          for (final d in [Decision.use, Decision.sell, Decision.discard]) DecisionButton(d, onTap: () => onPick(d)),
+        ];
+        if (row) {
+          return Row(
+            children: [
+              for (final b in buttons)
+                Expanded(
+                  child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: b),
+                ),
+            ],
+          );
+        }
+        return Column(
+          children: [
+            for (final b in buttons)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSizes.gapSmall),
+                child: b,
+              ),
+          ],
+        );
+      },
+    );
   }
 }
 
@@ -242,10 +266,13 @@ class Chip3 extends StatelessWidget {
   const Chip3(this.text, this.color, {super.key, this.textColor});
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
-        child: Text(text, style: TextStyle(color: textColor ?? Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
+    child: Text(
+      text,
+      style: TextStyle(color: textColor ?? Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
+    ),
+  );
 }
 
 Widget decisionChip(BuildContext context, Decision? d) {
@@ -265,22 +292,10 @@ class ItemPhoto extends StatelessWidget {
     final state = context.read<AppState>();
     final rel = full ? (item.photoPath ?? item.thumbPath) : (item.thumbPath ?? item.photoPath);
     final p = context.palette;
-    Widget placeholder() => Container(
-          height: height,
-          color: p.background,
-          alignment: Alignment.center,
-          child: const Emoji3D('package', size: 48),
-        );
+    Widget placeholder() => Container(height: height, color: p.background, alignment: Alignment.center, child: const Emoji3D('package', size: 48));
     if (rel == null) return placeholder();
     final f = File(state.paths.abs(rel));
-    return Image.file(
-      f,
-      height: height,
-      width: double.infinity,
-      fit: BoxFit.cover,
-      cacheWidth: full ? 1000 : 400,
-      errorBuilder: (_, _, _) => placeholder(),
-    );
+    return Image.file(f, height: height, width: double.infinity, fit: BoxFit.cover, cacheWidth: full ? 1000 : 400, errorBuilder: (_, _, _) => placeholder());
   }
 }
 
@@ -319,15 +334,23 @@ class ItemCard extends StatelessWidget {
                     children: [
                       Text(item.name, style: Theme.of(context).textTheme.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 4),
-                      Wrap(spacing: 6, runSpacing: 4, children: [
-                        decisionChip(context, item.decision),
-                        if (item.saleStatus != null) Chip3(item.saleStatus!.label, p.progress),
-                        if (item.discardDoneAt != null) Chip3('폐기 완료', p.muted),
-                      ]),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          decisionChip(context, item.decision),
+                          if (item.saleStatus != null) Chip3(item.saleStatus!.label, p.progress),
+                          if (item.discardDoneAt != null) Chip3('폐기 완료', p.muted),
+                        ],
+                      ),
                       if (item.room.isNotEmpty || item.spot.isNotEmpty) ...[
                         const SizedBox(height: 4),
-                        Text([item.room, item.spot].where((s) => s.isNotEmpty).join(' · '),
-                            style: TextStyle(color: p.muted, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        Text(
+                          [item.room, item.spot].where((s) => s.isNotEmpty).join(' · '),
+                          style: TextStyle(color: p.muted, fontSize: 15),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ],
                     ],
                   ),
@@ -378,20 +401,17 @@ class EmptyState extends StatelessWidget {
   const EmptyState({super.key, required this.message, this.buttonLabel, this.onButton, this.mood = MascotMood.hello});
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(AppSizes.gapLarge),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Mascot(mood, size: 120),
-            const SizedBox(height: AppSizes.gap),
-            Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium),
-            if (buttonLabel != null) ...[
-              const SizedBox(height: AppSizes.gap),
-              BigButton(label: buttonLabel!, emoji: 'camera', onTap: onButton),
-            ],
-          ],
-        ),
-      );
+    padding: const EdgeInsets.all(AppSizes.gapLarge),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Mascot(mood, size: 120),
+        const SizedBox(height: AppSizes.gap),
+        Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium),
+        if (buttonLabel != null) ...[const SizedBox(height: AppSizes.gap), BigButton(label: buttonLabel!, emoji: 'camera', onTap: onButton)],
+      ],
+    ),
+  );
 }
 
 /// 공통 화면 틀: 같은 자리의 "뒤로"·"홈" 버튼, 큰 제목
@@ -409,25 +429,21 @@ class AppPage extends StatelessWidget {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         leading: canPop
-            ? IconButton(
-                tooltip: '뒤로',
-                icon: const Icon(Icons.arrow_back_rounded, size: 30),
-                onPressed: () => Navigator.of(context).maybePop(),
-              )
+            ? IconButton(tooltip: '뒤로', icon: const Icon(Icons.arrow_back_rounded, size: 30), onPressed: () => Navigator.of(context).maybePop())
             : null,
         title: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis),
         actions: [
           ...?actions,
           if (showHome && canPop)
-            IconButton(
-              tooltip: '홈',
-              icon: const Icon(Icons.home_rounded, size: 30),
-              onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
-            ),
+            IconButton(tooltip: '홈', icon: const Icon(Icons.home_rounded, size: 30), onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst)),
         ],
       ),
       body: SafeArea(child: body),
-      bottomNavigationBar: bottom == null ? null : SafeArea(child: Padding(padding: const EdgeInsets.all(AppSizes.page), child: bottom)),
+      bottomNavigationBar: bottom == null
+          ? null
+          : SafeArea(
+              child: Padding(padding: const EdgeInsets.all(AppSizes.page), child: bottom),
+            ),
     );
   }
 }
@@ -449,7 +465,13 @@ Future<bool> confirmOnce(BuildContext context, {required String title, required 
       actionsOverflowDirection: VerticalDirection.up,
       actions: [
         BigButton(label: '아니요', color: p.muted, expand: false, onTap: () => Navigator.pop(ctx, false)),
-        BigButton(label: okLabel, color: danger ? p.discard : p.primary, textColor: danger ? Colors.white : p.onPrimary, expand: false, onTap: () => Navigator.pop(ctx, true)),
+        BigButton(
+          label: okLabel,
+          color: danger ? p.discard : p.primary,
+          textColor: danger ? Colors.white : p.onPrimary,
+          expand: false,
+          onTap: () => Navigator.pop(ctx, true),
+        ),
       ],
     ),
   );
@@ -459,11 +481,13 @@ Future<bool> confirmOnce(BuildContext context, {required String title, required 
 void toast(BuildContext context, String msg, {String? actionLabel, VoidCallback? onAction}) {
   final m = ScaffoldMessenger.of(context);
   m.hideCurrentSnackBar();
-  m.showSnackBar(SnackBar(
-    content: Text(msg),
-    duration: const Duration(seconds: 5),
-    action: actionLabel == null ? null : SnackBarAction(label: actionLabel, onPressed: onAction ?? () {}),
-  ));
+  m.showSnackBar(
+    SnackBar(
+      content: Text(msg),
+      duration: const Duration(seconds: 5),
+      action: actionLabel == null ? null : SnackBarAction(label: actionLabel, onPressed: onAction ?? () {}),
+    ),
+  );
 }
 
 /// 글자 입력 대화상자 (마이크가 없을 때 대신)
@@ -494,7 +518,11 @@ Future<String?> askText(BuildContext context, {required String title, String hin
 Future<String?> listenOrType(BuildContext context, {required String title, String hint = '', String initial = '', int lines = 2}) async {
   final state = context.read<AppState>();
   if (state.user.voiceInputOn && state.voice.canListen) {
-    final said = await showDialog<String?>(context: context, barrierDismissible: false, builder: (_) => _ListeningDialog(title: title));
+    final said = await showDialog<String?>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _ListeningDialog(title: title),
+    );
     if (said != null && said.trim().isNotEmpty) return said;
     if (!context.mounted) return null;
   }
@@ -521,25 +549,28 @@ class _ListeningDialogState extends State<_ListeningDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: Text(widget.title),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Emoji3D('mic', size: 80),
-          const SizedBox(height: 12),
-          const Text('듣고 있어요… 말씀해 주세요', style: TextStyle(fontSize: 18)),
-          const SizedBox(height: 12),
-          LinearProgressIndicator(color: context.palette.progress),
-        ]),
-        actions: [
-          BigButton(
-            label: '글로 쓸게요',
-            expand: false,
-            onTap: () {
-              context.read<AppState>().voice.stopListening();
-              Navigator.pop(context, null);
-            },
-          ),
-        ],
-      );
+    title: Text(widget.title),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Emoji3D('mic', size: 80),
+        const SizedBox(height: 12),
+        const Text('듣고 있어요… 말씀해 주세요', style: TextStyle(fontSize: 18)),
+        const SizedBox(height: 12),
+        LinearProgressIndicator(color: context.palette.progress),
+      ],
+    ),
+    actions: [
+      BigButton(
+        label: '글로 쓸게요',
+        expand: false,
+        onTap: () {
+          context.read<AppState>().voice.stopListening();
+          Navigator.pop(context, null);
+        },
+      ),
+    ],
+  );
 }
 
 /// 화면 아래 가운데 크고 둥근 촬영·녹음 버튼
@@ -551,27 +582,30 @@ class CaptureButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Column(mainAxisSize: MainAxisSize.min, children: [
-      Pressable(
-        semanticLabel: label,
-        onTap: onTap,
-        builder: (context, pressed) => AnimatedContainer(
-          duration: context.motion.fast,
-          width: AppSizes.captureButton,
-          height: AppSizes.captureButton,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: p.accent,
-            border: Border.all(color: p.surface, width: 4),
-            boxShadow: AppShadows.raised(p, pressed: pressed),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Pressable(
+          semanticLabel: label,
+          onTap: onTap,
+          builder: (context, pressed) => AnimatedContainer(
+            duration: context.motion.fast,
+            width: AppSizes.captureButton,
+            height: AppSizes.captureButton,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: p.accent,
+              border: Border.all(color: p.surface, width: 4),
+              boxShadow: AppShadows.raised(p, pressed: pressed),
+            ),
+            alignment: Alignment.center,
+            child: Emoji3D(emoji, size: 48),
           ),
-          alignment: Alignment.center,
-          child: Emoji3D(emoji, size: 48),
         ),
-      ),
-      const SizedBox(height: 4),
-      Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-    ]);
+        const SizedBox(height: 4),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+      ],
+    );
   }
 }
 
@@ -603,20 +637,25 @@ class _FirstTimeTipState extends State<FirstTimeTip> {
       margin: const EdgeInsets.only(bottom: AppSizes.gap),
       padding: const EdgeInsets.all(AppSizes.gap),
       decoration: BoxDecoration(color: p.attention, borderRadius: BorderRadius.circular(AppSizes.radius)),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Emoji3D('idea', size: 36),
-        const SizedBox(width: 10),
-        Expanded(child: Text(widget.text, style: TextStyle(color: p.onAttention, fontSize: 17))),
-        IconButton(
-          tooltip: '닫기',
-          icon: Icon(Icons.close, color: p.onAttention),
-          onPressed: () {
-            final s = context.read<AppState>();
-            s.repo.setSetting(s.uid, 'tip_${widget.id}', '1');
-            setState(() => _show = false);
-          },
-        ),
-      ]),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Emoji3D('idea', size: 36),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(widget.text, style: TextStyle(color: p.onAttention, fontSize: 17)),
+          ),
+          IconButton(
+            tooltip: '닫기',
+            icon: Icon(Icons.close, color: p.onAttention),
+            onPressed: () {
+              final s = context.read<AppState>();
+              s.repo.setSetting(s.uid, 'tip_${widget.id}', '1');
+              setState(() => _show = false);
+            },
+          ),
+        ],
+      ),
     );
   }
 }
@@ -627,9 +666,9 @@ class SectionTitle extends StatelessWidget {
   const SectionTitle(this.text, {super.key});
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: AppSizes.gapLarge, bottom: AppSizes.gapSmall),
-        child: Text(text, style: Theme.of(context).textTheme.titleLarge),
-      );
+    padding: const EdgeInsets.only(top: AppSizes.gapLarge, bottom: AppSizes.gapSmall),
+    child: Text(text, style: Theme.of(context).textTheme.titleLarge),
+  );
 }
 
 /// 카드 상자
@@ -640,16 +679,19 @@ class Panel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSizes.gap),
-      margin: const EdgeInsets.only(bottom: AppSizes.gap),
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.gap),
+      child: Material(
         color: p.surface,
-        borderRadius: BorderRadius.circular(AppSizes.radius),
-        border: Border.all(color: border ?? p.border, width: 2),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radius),
+          side: BorderSide(color: border ?? p.border, width: 2),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.gap),
+          child: SizedBox(width: double.infinity, child: child),
+        ),
       ),
-      child: child,
     );
   }
 }

@@ -32,8 +32,7 @@ class _CelebrateView extends StatefulWidget {
 }
 
 class _CelebrateViewState extends State<_CelebrateView> with SingleTickerProviderStateMixin {
-  late final AnimationController c = AnimationController(vsync: this, duration: widget.duration)
-    ..forward().whenComplete(widget.onDone);
+  late final AnimationController c = AnimationController(vsync: this, duration: widget.duration)..forward().whenComplete(widget.onDone);
 
   @override
   void dispose() {
@@ -43,36 +42,45 @@ class _CelebrateViewState extends State<_CelebrateView> with SingleTickerProvide
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-        animation: c,
-        builder: (context, _) {
-          final t = c.value;
-          final pop = Curves.elasticOut.transform((t * 1.6).clamp(0, 1));
-          final fade = t < 0.75 ? 1.0 : 1 - (t - 0.75) / 0.25;
-          return Opacity(
-            opacity: fade.clamp(0, 1),
-            child: Container(
-              color: widget.color.withValues(alpha: 0.18 * fade),
-              alignment: Alignment.center,
-              child: Transform.scale(
-                scale: 0.4 + 0.6 * pop,
-                child: Material(
-                  color: Colors.transparent,
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Stack(alignment: Alignment.bottomRight, children: [
+    animation: c,
+    builder: (context, _) {
+      final t = c.value;
+      final pop = Curves.elasticOut.transform((t * 1.6).clamp(0, 1));
+      final fade = t < 0.75 ? 1.0 : 1 - (t - 0.75) / 0.25;
+      return Opacity(
+        opacity: fade.clamp(0, 1),
+        child: Container(
+          color: widget.color.withValues(alpha: 0.18 * fade),
+          alignment: Alignment.center,
+          child: Transform.scale(
+            scale: 0.4 + 0.6 * pop,
+            child: Material(
+              color: Colors.transparent,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
                       const Mascot(MascotMood.celebrate, size: 150),
                       Transform.rotate(angle: (1 - pop) * 1.5, child: const Emoji3D('check', size: 64)),
-                    ]),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                      decoration: BoxDecoration(color: widget.color, borderRadius: BorderRadius.circular(24)),
-                      child: Text(widget.message, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                    decoration: BoxDecoration(color: widget.color, borderRadius: BorderRadius.circular(24)),
+                    child: Text(
+                      widget.message,
+                      style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
                     ),
-                  ]),
-                ),
+                  ),
+                ],
               ),
             ),
-          );
-        },
+          ),
+        ),
       );
+    },
+  );
 }

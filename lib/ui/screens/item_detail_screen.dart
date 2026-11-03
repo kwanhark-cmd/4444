@@ -78,84 +78,157 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   Widget build(BuildContext context) {
     final p = context.palette;
     final it = item;
-    if (it == null) return const AppPage(title: '물건', body: Center(child: CircularProgressIndicator()));
+    if (it == null) {
+      return const AppPage(
+        title: '물건',
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     final s = context.read<AppState>();
     return AppPage(
       title: it.name,
-      body: ListView(padding: const EdgeInsets.all(AppSizes.page), children: [
-        ClipRRect(borderRadius: BorderRadius.circular(AppSizes.radius), child: SizedBox(height: 240, child: ItemPhoto(it, height: 240, full: true))),
-        const SizedBox(height: AppSizes.gap),
-        Wrap(spacing: 8, runSpacing: 6, children: [
-          decisionChip(context, it.decision),
-          if (it.saleStatus != null) Chip3(it.saleStatus!.label, p.progress),
-          Chip3('등록 ${dateKo(it.createdAt)}', p.muted),
-        ]),
-        if (it.aiSuggestion != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text('추천: ${it.aiSuggestion!.label} — ${it.aiReason}', style: const TextStyle(fontSize: 16))),
-        if (it.movedFromSaleAt != null)
-          Panel(
-            border: p.attention,
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              const Text('1년 동안 안 팔려 폐기 목록으로 옮겨졌어요.', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 8),
-              BigButton(label: '판매로 되돌리기', emoji: 'sell', color: p.sell, onTap: () async {
-                await s.sales.undoMoveToDiscard(it);
-                await s.refresh();
-                _load();
-              }),
-            ]),
+      body: ListView(
+        padding: const EdgeInsets.all(AppSizes.page),
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppSizes.radius),
+            child: SizedBox(height: 240, child: ItemPhoto(it, height: 240, full: true)),
           ),
-        const SectionTitle('분류 바꾸기'),
-        DecisionButtons(onPick: (d) async {
-          await _save(quiet: true);
-          if (!context.mounted) return;
-          await decideWithUndo(context, it, d);
-          _load();
-        }),
-        if (it.decision == Decision.sell) ...[
+          const SizedBox(height: AppSizes.gap),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              decisionChip(context, it.decision),
+              if (it.saleStatus != null) Chip3(it.saleStatus!.label, p.progress),
+              Chip3('등록 ${dateKo(it.createdAt)}', p.muted),
+            ],
+          ),
+          if (it.aiSuggestion != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text('추천: ${it.aiSuggestion!.label} — ${it.aiReason}', style: const TextStyle(fontSize: 16)),
+            ),
+          if (it.movedFromSaleAt != null)
+            Panel(
+              border: p.attention,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text('1년 동안 안 팔려 폐기 목록으로 옮겨졌어요.', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 8),
+                  BigButton(
+                    label: '판매로 되돌리기',
+                    emoji: 'sell',
+                    color: p.sell,
+                    onTap: () async {
+                      await s.sales.undoMoveToDiscard(it);
+                      await s.refresh();
+                      _load();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          const SectionTitle('분류 바꾸기'),
+          DecisionButtons(
+            onPick: (d) async {
+              await _save(quiet: true);
+              if (!context.mounted) return;
+              await decideWithUndo(context, it, d);
+              _load();
+            },
+          ),
+          if (it.decision == Decision.sell) ...[
+            const SizedBox(height: 8),
+            BigButton(
+              label: '판매 도우미 열기',
+              emoji: 'sell',
+              color: p.sell,
+              onTap: () => go(context, SellDetailScreen(itemId: it.id!)),
+            ),
+          ],
+          if (it.decision == Decision.discard) ...[
+            const SizedBox(height: 8),
+            BigButton(
+              label: '폐기 도우미 열기',
+              emoji: 'recycle',
+              color: p.discard,
+              onTap: () => go(context, DiscardDetailScreen(itemId: it.id!)),
+            ),
+          ],
+          const SectionTitle('사연 남기기'),
+          if (it.story.isNotEmpty) Panel(child: Text(it.story, style: const TextStyle(fontSize: 17))),
+          BigButton(label: it.story.isEmpty ? '말로 사연 남기기' : '사연 다시 남기기', emoji: 'mic', color: p.progress, onTap: _story),
+          const SectionTitle('정보 고치기'),
+          TextField(
+            controller: name,
+            decoration: const InputDecoration(labelText: '이름'),
+          ),
           const SizedBox(height: 8),
-          BigButton(label: '판매 도우미 열기', emoji: 'sell', color: p.sell, onTap: () => go(context, SellDetailScreen(itemId: it.id!))),
-        ],
-        if (it.decision == Decision.discard) ...[
+          TextField(
+            controller: kind,
+            decoration: const InputDecoration(labelText: '종류'),
+          ),
           const SizedBox(height: 8),
-          BigButton(label: '폐기 도우미 열기', emoji: 'recycle', color: p.discard, onTap: () => go(context, DiscardDetailScreen(itemId: it.id!))),
+          TextField(
+            controller: cond,
+            decoration: const InputDecoration(labelText: '상태'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: room,
+            decoration: const InputDecoration(labelText: '방'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: spot,
+            decoration: const InputDecoration(labelText: '자리'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: tags,
+            decoration: const InputDecoration(labelText: '꼬리표 (쉼표로 구분)'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: desc,
+            minLines: 2,
+            maxLines: 5,
+            decoration: const InputDecoration(labelText: '설명'),
+          ),
+          const SizedBox(height: 8),
+          BigButton(
+            label: '말로 설명 더하기',
+            emoji: 'mic',
+            color: p.progress,
+            onTap: () async {
+              final t = await listenOrType(context, title: '설명', initial: desc.text);
+              if (t != null) setState(() => desc.text = t);
+            },
+          ),
+          const SizedBox(height: AppSizes.gap),
+          BigButton(label: '저장', emoji: 'check', color: p.primary, onTap: _save),
+          const SizedBox(height: AppSizes.gapLarge),
+          BigButton(
+            label: '이 물건 지우기',
+            icon: Icons.delete_forever_rounded,
+            color: p.discard,
+            onTap: () async {
+              final ok = await confirmTwice(
+                context,
+                title: '물건 지우기',
+                first: '"${it.name}"을(를) 목록에서 지울까요? (폐기 분류와는 달라요)',
+                second: '지우면 되돌릴 수 없어요.',
+                okLabel: '지우기',
+              );
+              if (!ok || !context.mounted) return;
+              await s.deleteItem(it);
+              if (context.mounted) Navigator.of(context).pop();
+            },
+          ),
         ],
-        const SectionTitle('사연 남기기'),
-        if (it.story.isNotEmpty) Panel(child: Text(it.story, style: const TextStyle(fontSize: 17))),
-        BigButton(label: it.story.isEmpty ? '말로 사연 남기기' : '사연 다시 남기기', emoji: 'mic', color: p.progress, onTap: _story),
-        const SectionTitle('정보 고치기'),
-        TextField(controller: name, decoration: const InputDecoration(labelText: '이름')),
-        const SizedBox(height: 8),
-        TextField(controller: kind, decoration: const InputDecoration(labelText: '종류')),
-        const SizedBox(height: 8),
-        TextField(controller: cond, decoration: const InputDecoration(labelText: '상태')),
-        const SizedBox(height: 8),
-        TextField(controller: room, decoration: const InputDecoration(labelText: '방')),
-        const SizedBox(height: 8),
-        TextField(controller: spot, decoration: const InputDecoration(labelText: '자리')),
-        const SizedBox(height: 8),
-        TextField(controller: tags, decoration: const InputDecoration(labelText: '꼬리표 (쉼표로 구분)')),
-        const SizedBox(height: 8),
-        TextField(controller: desc, minLines: 2, maxLines: 5, decoration: const InputDecoration(labelText: '설명')),
-        const SizedBox(height: 8),
-        BigButton(label: '말로 설명 더하기', emoji: 'mic', color: p.progress, onTap: () async {
-          final t = await listenOrType(context, title: '설명', initial: desc.text);
-          if (t != null) setState(() => desc.text = t);
-        }),
-        const SizedBox(height: AppSizes.gap),
-        BigButton(label: '저장', emoji: 'check', color: p.primary, onTap: _save),
-        const SizedBox(height: AppSizes.gapLarge),
-        BigButton(
-          label: '이 물건 지우기',
-          icon: Icons.delete_forever_rounded,
-          color: p.discard,
-          onTap: () async {
-            final ok = await confirmTwice(context, title: '물건 지우기', first: '"${it.name}"을(를) 목록에서 지울까요? (폐기 분류와는 달라요)', second: '지우면 되돌릴 수 없어요.', okLabel: '지우기');
-            if (!ok || !context.mounted) return;
-            await s.deleteItem(it);
-            if (context.mounted) Navigator.of(context).pop();
-          },
-        ),
-      ]),
+      ),
     );
   }
 }

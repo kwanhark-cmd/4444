@@ -62,7 +62,9 @@ class _ClassifyScreenState extends State<ClassifyScreen> with SingleTickerProvid
     switch (c.kind) {
       case VoiceCommandKind.decide:
         final d = c.decision!;
-        final ok = !c.needsConfirm || await confirmOnce(context, title: '${d.label}(으)로 정할까요?', message: '"${item.name}"을(를) ${d.label}(으)로 정해요.', okLabel: '네, ${d.label}');
+        final ok =
+            !c.needsConfirm ||
+            await confirmOnce(context, title: '${d.label}(으)로 정할까요?', message: '"${item.name}"을(를) ${d.label}(으)로 정해요.', okLabel: '네, ${d.label}');
         if (ok && mounted) await _decide(item, d);
       case VoiceCommandKind.readToday:
         await s.say(s.todaySpeech());
@@ -80,11 +82,14 @@ class _ClassifyScreenState extends State<ClassifyScreen> with SingleTickerProvid
         context: context,
         builder: (ctx) => AlertDialog(
           title: const Text('결정 도우미'),
-          content: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Mascot(MascotMood.thinking, size: 90),
-            const SizedBox(height: 8),
-            Text(q.text, style: const TextStyle(fontSize: 20), textAlign: TextAlign.center),
-          ]),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Mascot(MascotMood.thinking, size: 90),
+              const SizedBox(height: 8),
+              Text(q.text, style: const TextStyle(fontSize: 20), textAlign: TextAlign.center),
+            ],
+          ),
           actionsOverflowDirection: VerticalDirection.up,
           actions: [
             BigButton(label: '아니요', expand: false, color: ctx.palette.muted, onTap: () => Navigator.pop(ctx, false)),
@@ -137,64 +142,76 @@ class _ClassifyScreenState extends State<ClassifyScreen> with SingleTickerProvid
     final hint = flying ?? _dirOf(drag);
     return AppPage(
       title: '정리하기 (${list.length}개 남음)',
-      body: LayoutBuilder(builder: (context, c) {
-        final cardH = max(220.0, min(c.maxHeight * 0.45, 420.0));
-        return ListView(padding: const EdgeInsets.all(AppSizes.page), children: [
-          const FirstTimeTip(id: 'swipe', text: '사진을 왼쪽으로 밀면 폐기, 오른쪽은 판매, 위로 밀면 지금 쓰는 것이에요. 아래 버튼을 눌러도 돼요.'),
-          _arrows(p),
-          const SizedBox(height: 8),
-          GestureDetector(
-            onPanUpdate: (d) => setState(() => drag += d.delta),
-            onPanEnd: (_) {
-              final d = _dirOf(drag);
-              if (d == null) {
-                setState(() => drag = Offset.zero);
-              } else {
-                _decide(item, d);
-              }
-            },
-            child: AnimatedBuilder(
-              animation: fly,
-              builder: (context, child) {
-                var o = drag;
-                if (flying != null) {
-                  final t = Curves.easeIn.transform(fly.value);
-                  final target = switch (flying!) {
-                    Decision.use => const Offset(0, -900),
-                    Decision.sell => const Offset(900, 0),
-                    Decision.discard => const Offset(-900, 0),
-                  };
-                  o = Offset.lerp(drag, target, t)!;
-                }
-                return Transform.translate(
-                  offset: o,
-                  child: Transform.rotate(angle: o.dx / 1400, child: child),
-                );
-              },
-              child: _card(item, cardH, hint, p),
-            ),
-          ),
-          const SizedBox(height: AppSizes.gap),
-          DecisionButtons(onPick: (d) => _decide(item, d)),
-          const SizedBox(height: 8),
-          Row(children: [
-            Expanded(child: BigButton(label: '말로 정하기', emoji: 'mic', color: p.progress, onTap: () => _voice(item))),
-            const SizedBox(width: 8),
-            Expanded(child: BigButton(label: '잘 모르겠어요', emoji: 'idea', color: p.accent, onTap: () => _help(item))),
-          ]),
-          const SizedBox(height: 8),
-          if (item.aiSuggestion == null)
-            BigButton(label: asking ? '추천 받는 중…' : 'AI 추천 받기', emoji: 'speech', color: p.primary, onTap: asking ? null : () => _askAi(item)),
-        ]);
-      }),
+      body: LayoutBuilder(
+        builder: (context, c) {
+          final cardH = max(220.0, min(c.maxHeight * 0.45, 420.0));
+          return ListView(
+            padding: const EdgeInsets.all(AppSizes.page),
+            children: [
+              const FirstTimeTip(id: 'swipe', text: '사진을 왼쪽으로 밀면 폐기, 오른쪽은 판매, 위로 밀면 지금 쓰는 것이에요. 아래 버튼을 눌러도 돼요.'),
+              _arrows(p),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onPanUpdate: (d) => setState(() => drag += d.delta),
+                onPanEnd: (_) {
+                  final d = _dirOf(drag);
+                  if (d == null) {
+                    setState(() => drag = Offset.zero);
+                  } else {
+                    _decide(item, d);
+                  }
+                },
+                child: AnimatedBuilder(
+                  animation: fly,
+                  builder: (context, child) {
+                    var o = drag;
+                    if (flying != null) {
+                      final t = Curves.easeIn.transform(fly.value);
+                      final target = switch (flying!) {
+                        Decision.use => const Offset(0, -900),
+                        Decision.sell => const Offset(900, 0),
+                        Decision.discard => const Offset(-900, 0),
+                      };
+                      o = Offset.lerp(drag, target, t)!;
+                    }
+                    return Transform.translate(
+                      offset: o,
+                      child: Transform.rotate(angle: o.dx / 1400, child: child),
+                    );
+                  },
+                  child: _card(item, cardH, hint, p),
+                ),
+              ),
+              const SizedBox(height: AppSizes.gap),
+              DecisionButtons(onPick: (d) => _decide(item, d)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: BigButton(label: '말로 정하기', emoji: 'mic', color: p.progress, onTap: () => _voice(item)),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: BigButton(label: '잘 모르겠어요', emoji: 'idea', color: p.accent, onTap: () => _help(item)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              if (item.aiSuggestion == null)
+                BigButton(label: asking ? '추천 받는 중…' : 'AI 추천 받기', emoji: 'speech', color: p.primary, onTap: asking ? null : () => _askAi(item)),
+            ],
+          );
+        },
+      ),
     );
   }
 
-  Widget _arrows(AppPalette p) => Wrap(alignment: WrapAlignment.spaceBetween, spacing: 8, runSpacing: 4, children: [
-        Chip3('← 폐기', p.discard),
-        Chip3('↑ 지금 쓰는 것', p.use),
-        Chip3('판매 →', p.sell),
-      ]);
+  Widget _arrows(AppPalette p) => Wrap(
+    alignment: WrapAlignment.spaceBetween,
+    spacing: 8,
+    runSpacing: 4,
+    children: [Chip3('← 폐기', p.discard), Chip3('↑ 지금 쓰는 것', p.use), Chip3('판매 →', p.sell)],
+  );
 
   Widget _card(Item item, double h, Decision? hint, AppPalette p) {
     final color = hint == null ? p.border : decisionColor(context, hint);
@@ -207,36 +224,51 @@ class _ClassifyScreenState extends State<ClassifyScreen> with SingleTickerProvid
         boxShadow: AppShadows.raised(p),
       ),
       clipBehavior: Clip.antiAlias,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Stack(children: [
-          SizedBox(height: h, child: ItemPhoto(item, height: h, full: true)),
-          if (hint != null)
-            Positioned.fill(
-              child: Container(
-                color: color.withValues(alpha: flying != null ? 0.7 : 0.35),
-                alignment: Alignment.center,
-                child: Chip3(hint.label, color),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Stack(
+            children: [
+              SizedBox(
+                height: h,
+                child: ItemPhoto(item, height: h, full: true),
               ),
-            ),
-        ]),
-        Padding(
-          padding: const EdgeInsets.all(AppSizes.gap),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(item.name, style: Theme.of(context).textTheme.headlineMedium),
-            if (item.condition.isNotEmpty || item.description.isNotEmpty)
-              Text([item.condition, item.description].where((t) => t.isNotEmpty).join(' · '), style: const TextStyle(fontSize: 17)),
-            if (item.aiSuggestion != null) ...[
-              const SizedBox(height: 8),
-              Wrap(spacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                const Emoji3D('idea', size: 28),
-                const Text('추천:', style: TextStyle(fontSize: 17)),
-                decisionChip(context, item.aiSuggestion),
-              ]),
-              if (item.aiReason.isNotEmpty) Text(item.aiReason, style: TextStyle(color: p.muted, fontSize: 16)),
+              if (hint != null)
+                Positioned.fill(
+                  child: Container(
+                    color: color.withValues(alpha: flying != null ? 0.7 : 0.35),
+                    alignment: Alignment.center,
+                    child: Chip3(hint.label, color),
+                  ),
+                ),
             ],
-          ]),
-        ),
-      ]),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppSizes.gap),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item.name, style: Theme.of(context).textTheme.headlineMedium),
+                if (item.condition.isNotEmpty || item.description.isNotEmpty)
+                  Text([item.condition, item.description].where((t) => t.isNotEmpty).join(' · '), style: const TextStyle(fontSize: 17)),
+                if (item.aiSuggestion != null) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      const Emoji3D('idea', size: 28),
+                      const Text('추천:', style: TextStyle(fontSize: 17)),
+                      decisionChip(context, item.aiSuggestion),
+                    ],
+                  ),
+                  if (item.aiReason.isNotEmpty) Text(item.aiReason, style: TextStyle(color: p.muted, fontSize: 16)),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

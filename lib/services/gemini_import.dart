@@ -48,7 +48,14 @@ List<ImportedLine> parseImportText(String text) {
     }
     // 헤더처럼 보이는 줄(분류 이름만 있는 줄)은 건너뜀
     if (RegExp(r'^(판매|폐기|사용|지금 쓰는 것)( 목록)?$').hasMatch(name)) continue;
-    out.add(ImportedLine(name: name, decision: decision, note: note == rest && decision != null ? note.replaceAll(RegExp(r'판매|폐기|사용|지금 쓰는 것'), '').replaceAll(RegExp(r'[()]'), '').trim() : note, room: room));
+    out.add(
+      ImportedLine(
+        name: name,
+        decision: decision,
+        note: note == rest && decision != null ? note.replaceAll(RegExp(r'판매|폐기|사용|지금 쓰는 것'), '').replaceAll(RegExp(r'[()]'), '').trim() : note,
+        room: room,
+      ),
+    );
   }
   return out;
 }

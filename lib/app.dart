@@ -38,11 +38,7 @@ class BinugiApp extends StatelessWidget {
           theme: buildTheme(s.global.theme, reduceMotion: s.global.reduceMotion),
           locale: const Locale('ko', 'KR'),
           supportedLocales: const [Locale('ko', 'KR')],
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
+          localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
           builder: (context, child) {
             final mq = MediaQuery.of(context);
             final system = mq.textScaler.scale(1).clamp(1.0, 1.3);
@@ -114,20 +110,23 @@ class StartFailedApp extends StatelessWidget {
   const StartFailedApp({super.key, required this.error});
   @override
   Widget build(BuildContext context) => MaterialApp(
-        theme: buildTheme(ThemeModeChoice.light),
-        home: Scaffold(
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Text('앱을 시작하지 못했어요', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 16),
-                const Text('기기를 다시 켠 뒤 앱을 열어 보세요. 계속 안 되면 저장 공간이 충분한지 확인해 주세요.', style: TextStyle(fontSize: 18), textAlign: TextAlign.center),
-                const SizedBox(height: 16),
-                Text(AppLogger.redact(error), style: const TextStyle(fontSize: 13, color: Colors.grey)),
-              ]),
-            ),
+    theme: buildTheme(ThemeModeChoice.light),
+    home: Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('앱을 시작하지 못했어요', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 16),
+              const Text('기기를 다시 켠 뒤 앱을 열어 보세요. 계속 안 되면 저장 공간이 충분한지 확인해 주세요.', style: TextStyle(fontSize: 18), textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              Text(AppLogger.redact(error), style: const TextStyle(fontSize: 13, color: Colors.grey)),
+            ],
           ),
         ),
-      );
+      ),
+    ),
+  );
 }

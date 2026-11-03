@@ -30,12 +30,12 @@ class _NoticesScreenState extends State<NoticesScreen> {
   }
 
   String _emoji(String kind) => switch (kind) {
-        'daily' => 'calendar',
-        'price_drop' => 'sell',
-        'one_year_warn' => 'hourglass',
-        'one_year_moved' => 'warning',
-        _ => 'bell',
-      };
+    'daily' => 'calendar',
+    'price_drop' => 'sell',
+    'one_year_warn' => 'hourglass',
+    'one_year_moved' => 'warning',
+    _ => 'bell',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -46,27 +46,36 @@ class _NoticesScreenState extends State<NoticesScreen> {
       body: l == null
           ? const Center(child: CircularProgressIndicator())
           : l.isEmpty
-              ? const Center(child: EmptyState(message: '아직 알림이 없어요.'))
-              : ListView(padding: const EdgeInsets.all(AppSizes.page), children: [
-                  for (final n in l)
-                    InkWell(
-                      onTap: n.itemId == null ? null : () => go(context, ItemDetailScreen(itemId: n.itemId!)),
-                      child: Panel(
-                        border: n.readAt == null ? p.attention : null,
-                        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          ? const Center(child: EmptyState(message: '아직 알림이 없어요.'))
+          : ListView(
+              padding: const EdgeInsets.all(AppSizes.page),
+              children: [
+                for (final n in l)
+                  InkWell(
+                    onTap: n.itemId == null ? null : () => go(context, ItemDetailScreen(itemId: n.itemId!)),
+                    child: Panel(
+                      border: n.readAt == null ? p.attention : null,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Emoji3D(_emoji(n.kind), size: 40),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text(n.title, style: Theme.of(context).textTheme.titleMedium),
-                              Text(n.body, style: const TextStyle(fontSize: 16)),
-                              Text(dateKo(n.createdAt), style: TextStyle(color: p.muted, fontSize: 14)),
-                            ]),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(n.title, style: Theme.of(context).textTheme.titleMedium),
+                                Text(n.body, style: const TextStyle(fontSize: 16)),
+                                Text(dateKo(n.createdAt), style: TextStyle(color: p.muted, fontSize: 14)),
+                              ],
+                            ),
                           ),
-                        ]),
+                        ],
                       ),
                     ),
-                ]),
+                  ),
+              ],
+            ),
     );
   }
 }

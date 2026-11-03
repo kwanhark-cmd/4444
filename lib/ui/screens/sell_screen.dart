@@ -23,24 +23,34 @@ class SellScreen extends StatelessWidget {
     return AppPage(
       title: '판매 도우미',
       body: list.isEmpty
-          ? const Center(child: SingleChildScrollView(child: EmptyState(message: '판매로 정한 물건이 아직 없어요.\n"정리하기"에서 판매를 골라 보세요.', mood: MascotMood.thinking)))
-          : ListView(padding: const EdgeInsets.all(AppSizes.page), children: [
-              const FirstTimeTip(id: 'sell', text: '판매글을 만들어 "복사"한 뒤, 당근마켓이나 번개장터 앱에 직접 붙여넣어 올리세요. 이 앱은 대신 올리지 않아요.'),
-              for (final it in list) ...[
-                ItemCard(
-                  it,
-                  onTap: () => go(context, SellDetailScreen(itemId: it.id!)),
-                  trailing: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                      Text(won(it.price), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-                      if (s.sales.suggestedDrop(it, s.user, at: s.now) != null) Chip3('인하 추천', p.attention, textColor: p.onAttention),
-                    ]),
+          ? const Center(
+              child: SingleChildScrollView(
+                child: EmptyState(message: '판매로 정한 물건이 아직 없어요.\n"정리하기"에서 판매를 골라 보세요.', mood: MascotMood.thinking),
+              ),
+            )
+          : ListView(
+              padding: const EdgeInsets.all(AppSizes.page),
+              children: [
+                const FirstTimeTip(id: 'sell', text: '판매글을 만들어 "복사"한 뒤, 당근마켓이나 번개장터 앱에 직접 붙여넣어 올리세요. 이 앱은 대신 올리지 않아요.'),
+                for (final it in list) ...[
+                  ItemCard(
+                    it,
+                    onTap: () => go(context, SellDetailScreen(itemId: it.id!)),
+                    trailing: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(won(it.price), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                          if (s.sales.suggestedDrop(it, s.user, at: s.now) != null) Chip3('인하 추천', p.attention, textColor: p.onAttention),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
+                  const SizedBox(height: 10),
+                ],
               ],
-            ]),
+            ),
     );
   }
 }
@@ -131,116 +141,182 @@ class _SellDetailScreenState extends State<SellDetailScreen> {
   Widget build(BuildContext context) {
     final p = context.palette;
     final it = item;
-    if (it == null) return const AppPage(title: '판매', body: Center(child: CircularProgressIndicator()));
+    if (it == null) {
+      return const AppPage(
+        title: '판매',
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     final s = context.watch<AppState>();
     final drop = s.sales.suggestedDrop(it, s.user, at: s.now);
     final days = s.sales.daysListed(it, s.now);
     final all = '${title.text}\n\n${body.text}\n\n가격: ${won(int.tryParse(price.text))}';
     return AppPage(
       title: '판매: ${it.name}',
-      body: ListView(padding: const EdgeInsets.all(AppSizes.page), children: [
-        ClipRRect(borderRadius: BorderRadius.circular(AppSizes.radius), child: SizedBox(height: 200, child: ItemPhoto(it, height: 200, full: true))),
-        const SectionTitle('판매 상태'),
-        Wrap(spacing: 8, runSpacing: 8, children: [
-          for (final st in SaleStatus.values)
-            BigButton(
-              label: '${it.saleStatus == st ? '✓ ' : ''}${st.label}',
-              expand: false,
-              color: it.saleStatus == st ? p.progress : p.muted,
-              onTap: () async {
-                int? sold;
-                if (st == SaleStatus.sold) {
-                  final t = await askText(context, title: '얼마에 팔았나요?', initial: price.text, hint: '숫자만');
-                  if (t == null) return;
-                  sold = int.tryParse(t.replaceAll(RegExp(r'[^0-9]'), ''));
-                }
-                await s.sales.setStatus(it, st, soldPrice: sold);
-                await s.refresh();
-                if (!context.mounted) return;
-                if (st == SaleStatus.sold) {
-                  celebrate(context, decision: Decision.sell, message: '판매 완료!');
-                  s.say('${it.name} 판매 완료! 집이 한결 가벼워졌어요.');
-                }
-                setState(() {});
-              },
+      body: ListView(
+        padding: const EdgeInsets.all(AppSizes.page),
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppSizes.radius),
+            child: SizedBox(height: 200, child: ItemPhoto(it, height: 200, full: true)),
+          ),
+          const SectionTitle('판매 상태'),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final st in SaleStatus.values)
+                BigButton(
+                  label: '${it.saleStatus == st ? '✓ ' : ''}${st.label}',
+                  expand: false,
+                  color: it.saleStatus == st ? p.progress : p.muted,
+                  onTap: () async {
+                    int? sold;
+                    if (st == SaleStatus.sold) {
+                      final t = await askText(context, title: '얼마에 팔았나요?', initial: price.text, hint: '숫자만');
+                      if (t == null) return;
+                      sold = int.tryParse(t.replaceAll(RegExp(r'[^0-9]'), ''));
+                    }
+                    await s.sales.setStatus(it, st, soldPrice: sold);
+                    await s.refresh();
+                    if (!context.mounted) return;
+                    if (st == SaleStatus.sold) {
+                      celebrate(context, decision: Decision.sell, message: '판매 완료!');
+                      s.say('${it.name} 판매 완료! 집이 한결 가벼워졌어요.');
+                    }
+                    setState(() {});
+                  },
+                ),
+            ],
+          ),
+          if (it.listedAt != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                '판매 시작 $days일째 · ${SaleService.oneYearDays - days > 0 ? '${SaleService.oneYearDays - days}일 뒤 안 팔리면 폐기 목록으로 옮겨요' : ''}',
+                style: TextStyle(color: p.muted, fontSize: 16),
+              ),
             ),
-        ]),
-        if (it.listedAt != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text('판매 시작 $days일째 · ${SaleService.oneYearDays - days > 0 ? '${SaleService.oneYearDays - days}일 뒤 안 팔리면 폐기 목록으로 옮겨요' : ''}', style: TextStyle(color: p.muted, fontSize: 16)),
+          if (drop != null)
+            Panel(
+              border: p.attention,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      const Emoji3D('idea', size: 36),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '$days일째 안 팔렸어요. ${won(it.price)} → ${won(drop)}(으)로 내려 볼까요?',
+                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  BigButton(
+                    label: '${won(drop)}(으)로 내리기',
+                    color: p.sell,
+                    onTap: () async {
+                      await s.sales.applyPriceDrop(it, drop);
+                      price.text = '$drop';
+                      await s.refresh();
+                      setState(() {});
+                    },
+                  ),
+                ],
+              ),
+            ),
+          const SectionTitle('가격'),
+          Panel(child: Text('예상 시세: ${wonRange(it.priceLow, it.priceHigh)}\n(AI 추정이에요. 최종 가격은 직접 정해 주세요)', style: const TextStyle(fontSize: 17))),
+          TextField(
+            controller: price,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: '내가 정한 가격 (원)'),
+            onChanged: (_) => setState(() {}),
           ),
-        if (drop != null)
-          Panel(
-            border: p.attention,
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Row(children: [
-                const Emoji3D('idea', size: 36),
-                const SizedBox(width: 8),
-                Expanded(child: Text('$days일째 안 팔렸어요. ${won(it.price)} → ${won(drop)}(으)로 내려 볼까요?', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700))),
-              ]),
-              const SizedBox(height: 8),
-              BigButton(label: '${won(drop)}(으)로 내리기', color: p.sell, onTap: () async {
-                await s.sales.applyPriceDrop(it, drop);
-                price.text = '$drop';
-                await s.refresh();
-                setState(() {});
-              }),
-            ]),
+          const SizedBox(height: 8),
+          BigButton(
+            label: '가격 저장',
+            emoji: 'check',
+            color: p.primary,
+            onTap: () async {
+              await _saveFields();
+              if (context.mounted) toast(context, '가격을 저장했어요');
+              setState(() {});
+            },
           ),
-        const SectionTitle('가격'),
-        Panel(child: Text('예상 시세: ${wonRange(it.priceLow, it.priceHigh)}\n(AI 추정이에요. 최종 가격은 직접 정해 주세요)', style: const TextStyle(fontSize: 17))),
-        TextField(
-          controller: price,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: '내가 정한 가격 (원)'),
-          onChanged: (_) => setState(() {}),
-        ),
-        const SizedBox(height: 8),
-        BigButton(label: '가격 저장', emoji: 'check', color: p.primary, onTap: () async {
-          await _saveFields();
-          if (context.mounted) toast(context, '가격을 저장했어요');
-          setState(() {});
-        }),
-        const SectionTitle('판매글'),
-        if (writing) const Padding(padding: EdgeInsets.all(12), child: Center(child: Column(children: [Mascot(MascotMood.thinking, size: 80), Text('판매글을 쓰고 있어요…')]))),
-        TextField(controller: title, decoration: const InputDecoration(labelText: '제목'), onChanged: (_) => setState(() {})),
-        const SizedBox(height: 8),
-        TextField(controller: category, decoration: const InputDecoration(labelText: '카테고리')),
-        const SizedBox(height: 8),
-        TextField(controller: body, minLines: 5, maxLines: 12, decoration: const InputDecoration(labelText: '설명'), onChanged: (_) => setState(() {})),
-        const SizedBox(height: 8),
-        BigButton(label: '판매글 전체 복사', emoji: 'clipboard', color: p.sell, onTap: () {
-          _saveFields();
-          _copy(all, '판매글');
-        }),
-        const SizedBox(height: 8),
-        Row(children: [
-          Expanded(child: BigButton(label: '제목만 복사', color: p.primary, onTap: () => _copy(title.text, '제목'))),
-          const SizedBox(width: 8),
-          Expanded(child: BigButton(label: '설명만 복사', color: p.primary, onTap: () => _copy(body.text, '설명'))),
-        ]),
-        const SizedBox(height: 8),
-        BigButton(label: writing ? '쓰는 중…' : '판매글 다시 만들기', emoji: 'speech', color: p.muted, onTap: writing ? null : _write),
-        const SizedBox(height: 8),
-        Text('글을 복사한 뒤 당근마켓·번개장터 앱을 직접 열어 붙여넣으세요. 연락이 오면 각 앱의 알림으로 알 수 있어요.', style: TextStyle(color: p.muted, fontSize: 15)),
-        const SectionTitle('택배로 보낼 때'),
-        SwitchListTile(
-          value: showShipping,
-          title: const Text('번개장터 택배 판매 안내 보기', style: TextStyle(fontSize: 17)),
-          onChanged: (v) {
-            setState(() => showShipping = v);
-            _saveFields();
-          },
-        ),
-        if (showShipping) const Panel(child: Text(shippingGuide, style: TextStyle(fontSize: 17, height: 1.5))),
-        const SizedBox(height: 40),
-      ]),
+          const SectionTitle('판매글'),
+          if (writing)
+            const Padding(
+              padding: EdgeInsets.all(12),
+              child: Center(child: Column(children: [Mascot(MascotMood.thinking, size: 80), Text('판매글을 쓰고 있어요…')])),
+            ),
+          TextField(
+            controller: title,
+            decoration: const InputDecoration(labelText: '제목'),
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: category,
+            decoration: const InputDecoration(labelText: '카테고리'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: body,
+            minLines: 5,
+            maxLines: 12,
+            decoration: const InputDecoration(labelText: '설명'),
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 8),
+          BigButton(
+            label: '판매글 전체 복사',
+            emoji: 'clipboard',
+            color: p.sell,
+            onTap: () {
+              _saveFields();
+              _copy(all, '판매글');
+            },
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: BigButton(label: '제목만 복사', color: p.primary, onTap: () => _copy(title.text, '제목')),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: BigButton(label: '설명만 복사', color: p.primary, onTap: () => _copy(body.text, '설명')),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          BigButton(label: writing ? '쓰는 중…' : '판매글 다시 만들기', emoji: 'speech', color: p.muted, onTap: writing ? null : _write),
+          const SizedBox(height: 8),
+          Text('글을 복사한 뒤 당근마켓·번개장터 앱을 직접 열어 붙여넣으세요. 연락이 오면 각 앱의 알림으로 알 수 있어요.', style: TextStyle(color: p.muted, fontSize: 15)),
+          const SectionTitle('택배로 보낼 때'),
+          SwitchListTile(
+            value: showShipping,
+            title: const Text('번개장터 택배 판매 안내 보기', style: TextStyle(fontSize: 17)),
+            onChanged: (v) {
+              setState(() => showShipping = v);
+              _saveFields();
+            },
+          ),
+          if (showShipping) const Panel(child: Text(shippingGuide, style: TextStyle(fontSize: 17, height: 1.5))),
+          const SizedBox(height: 40),
+        ],
+      ),
     );
   }
 }
 
-const shippingGuide = '📦 포장·발송 방법\n'
+const shippingGuide =
+    '📦 포장·발송 방법\n'
     '1. 물건을 깨끗이 닦고, 사진을 한 장 더 찍어 두세요(발송 전 상태 기록).\n'
     '2. 깨지는 물건은 뽁뽁이(에어캡)로 두세 겹 싸고, 상자 빈 곳은 신문지로 채워요.\n'
     '3. 상자는 테이프로 "H" 모양으로 단단히 붙여요.\n'

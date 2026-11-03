@@ -35,57 +35,83 @@ class _ItemListScreenState extends State<ItemListScreen> {
       return '${i.name} ${i.room} ${i.spot} ${i.tags} ${i.kind}'.contains(q);
     }).toList();
     Widget chip(String label, bool on, Color color, VoidCallback tap) => Padding(
-          padding: const EdgeInsets.only(right: 6, bottom: 6),
-          child: ChoiceChip(
-            label: Text(label, style: TextStyle(fontSize: 16, color: on ? Colors.white : p.onSurface, fontWeight: FontWeight.w700)),
-            selected: on,
-            selectedColor: color,
-            onSelected: (_) => tap(),
-          ),
-        );
+      padding: const EdgeInsets.only(right: 6, bottom: 6),
+      child: ChoiceChip(
+        label: Text(
+          label,
+          style: TextStyle(fontSize: 16, color: on ? Colors.white : p.onSurface, fontWeight: FontWeight.w700),
+        ),
+        selected: on,
+        selectedColor: color,
+        onSelected: (_) => tap(),
+      ),
+    );
     return AppPage(
       title: '모든 물건',
-      body: Column(children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(AppSizes.page, 0, AppSizes.page, 8),
-          child: TextField(
-            decoration: const InputDecoration(labelText: '찾기 (이름·방·자리)', prefixIcon: Icon(Icons.search_rounded)),
-            onChanged: (v) => setState(() => query = v),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(AppSizes.page, 0, AppSizes.page, 8),
+            child: TextField(
+              decoration: const InputDecoration(labelText: '찾기 (이름·방·자리)', prefixIcon: Icon(Icons.search_rounded)),
+              onChanged: (v) => setState(() => query = v),
+            ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSizes.page),
-          child: Wrap(children: [
-            chip('전체', filter == null && !undecided, p.primary, () => setState(() {
-                  filter = null;
-                  undecided = false;
-                })),
-            chip('아직 안 정함', undecided, p.progress, () => setState(() {
-                  undecided = true;
-                  filter = null;
-                })),
-            for (final d in Decision.values)
-              chip(d.label, filter == d && !undecided, decisionColor(context, d), () => setState(() {
-                    filter = d;
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.page),
+            child: Wrap(
+              children: [
+                chip(
+                  '전체',
+                  filter == null && !undecided,
+                  p.primary,
+                  () => setState(() {
+                    filter = null;
                     undecided = false;
-                  })),
-          ]),
-        ),
-        Expanded(
-          child: list.isEmpty
-              ? Center(
-                  child: SingleChildScrollView(
-                    child: EmptyState(message: s.items.isEmpty ? '첫 물건을 찍어보세요' : '해당하는 물건이 없어요', buttonLabel: '물건 찍기', onButton: () => go(context, const RegisterScreen())),
-                  ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.all(AppSizes.page),
-                  itemCount: list.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
-                  itemBuilder: (context, i) => ItemCard(list[i], onTap: () => go(context, ItemDetailScreen(itemId: list[i].id!))),
+                  }),
                 ),
-        ),
-      ]),
+                chip(
+                  '아직 안 정함',
+                  undecided,
+                  p.progress,
+                  () => setState(() {
+                    undecided = true;
+                    filter = null;
+                  }),
+                ),
+                for (final d in Decision.values)
+                  chip(
+                    d.label,
+                    filter == d && !undecided,
+                    decisionColor(context, d),
+                    () => setState(() {
+                      filter = d;
+                      undecided = false;
+                    }),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: list.isEmpty
+                ? Center(
+                    child: SingleChildScrollView(
+                      child: EmptyState(
+                        message: s.items.isEmpty ? '첫 물건을 찍어보세요' : '해당하는 물건이 없어요',
+                        buttonLabel: '물건 찍기',
+                        onButton: () => go(context, const RegisterScreen()),
+                      ),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.all(AppSizes.page),
+                    itemCount: list.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    itemBuilder: (context, i) => ItemCard(list[i], onTap: () => go(context, ItemDetailScreen(itemId: list[i].id!))),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }

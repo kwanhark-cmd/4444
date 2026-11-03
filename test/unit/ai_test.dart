@@ -12,17 +12,19 @@ import 'package:http/testing.dart';
 import '../helpers.dart';
 
 http.Response _ok(Map<String, Object?> json, {int inTok = 3000, int outTok = 400, String stop = 'end_turn'}) => http.Response.bytes(
-      utf8.encode(jsonEncode({
-        'content': [
-          {'type': 'thinking', 'thinking': ''},
-          {'type': 'text', 'text': jsonEncode(json)},
-        ],
-        'stop_reason': stop,
-        'usage': {'input_tokens': inTok, 'output_tokens': outTok},
-      })),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
+  utf8.encode(
+    jsonEncode({
+      'content': [
+        {'type': 'thinking', 'thinking': ''},
+        {'type': 'text', 'text': jsonEncode(json)},
+      ],
+      'stop_reason': stop,
+      'usage': {'input_tokens': inTok, 'output_tokens': outTok},
+    }),
+  ),
+  200,
+  headers: {'content-type': 'application/json'},
+);
 
 void main() {
   test('가짜 HTTP로 Claude 요청 형식과 응답 해석 확인 (실제 호출 없음)', () async {
@@ -33,7 +35,7 @@ void main() {
         'items': [
           {'name': '커피 머신', 'kind': '소형 가전', 'condition': '잘 작동함', 'suggestion': 'sell', 'reason': '쓸 만해요'},
           {'name': '', 'kind': '', 'condition': '', 'suggestion': 'use', 'reason': ''},
-        ]
+        ],
       });
     });
     final ai = ClaudeAi(apiKey: 'sk-ant-test', client: client);
@@ -67,13 +69,27 @@ void main() {
     expect(await kindFor(() async => http.Response('{}', 401)), AiErrorKind.badKey);
     expect(await kindFor(() async => http.Response('{}', 529)), AiErrorKind.server);
     expect(await kindFor(() async => _ok({}, stop: 'refusal')), AiErrorKind.refused);
-    expect(await kindFor(() async => http.Response.bytes(utf8.encode(jsonEncode({'content': [{'type': 'text', 'text': '말로만'}]})), 200)), AiErrorKind.recognitionFailed);
     expect(
-      await kindFor(() => Completer<http.Response>().future, timeout: const Duration(milliseconds: 50)),
-      AiErrorKind.timeout,
+      await kindFor(
+        () async => http.Response.bytes(
+          utf8.encode(
+            jsonEncode({
+              'content': [
+                {'type': 'text', 'text': '말로만'},
+              ],
+            }),
+          ),
+          200,
+        ),
+      ),
+      AiErrorKind.recognitionFailed,
     );
+    expect(await kindFor(() => Completer<http.Response>().future, timeout: const Duration(milliseconds: 50)), AiErrorKind.timeout);
     final noKey = ClaudeAi(apiKey: '', client: MockClient((_) async => http.Response('', 200)));
-    expect(() => noKey.suggest(Item(userId: 1, name: 'x', createdAt: DateTime(2026))), throwsA(isA<AiException>().having((e) => e.kind, 'kind', AiErrorKind.noKey)));
+    expect(
+      () => noKey.suggest(Item(userId: 1, name: 'x', createdAt: DateTime(2026))),
+      throwsA(isA<AiException>().having((e) => e.kind, 'kind', AiErrorKind.noKey)),
+    );
   });
 
   test('키가 없으면 연습 모드, 비용 0원', () async {
@@ -86,10 +102,12 @@ void main() {
 
   test('사진 보내기 동의가 꺼져 있으면 사진이 외부로 나가지 않음', () async {
     var calls = 0;
-    final (s, _) = await makeState(httpClient: MockClient((_) async {
-      calls++;
-      return _ok({'items': []});
-    }));
+    final (s, _) = await makeState(
+      httpClient: MockClient((_) async {
+        calls++;
+        return _ok({'items': []});
+      }),
+    );
     s.user
       ..aiProvider = 'claude'
       ..apiKey = 'sk-ant-x'
@@ -101,10 +119,16 @@ void main() {
 
   test('월 한도를 넘으면 호출하지 않고 한도 초과 안내', () async {
     var calls = 0;
-    final (s, _) = await makeState(httpClient: MockClient((_) async {
-      calls++;
-      return _ok({'items': [{'name': '컵', 'kind': '', 'condition': '', 'suggestion': 'sell', 'reason': ''}]});
-    }));
+    final (s, _) = await makeState(
+      httpClient: MockClient((_) async {
+        calls++;
+        return _ok({
+          'items': [
+            {'name': '컵', 'kind': '', 'condition': '', 'suggestion': 'sell', 'reason': ''},
+          ],
+        });
+      }),
+    );
     s.user
       ..aiProvider = 'claude'
       ..apiKey = 'sk-ant-x'

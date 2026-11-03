@@ -19,7 +19,15 @@ void main() {
     final found = await s.ai.recognize(s.uid, s.user, await s.images.readPhoto(photo.photoPath), width: photo.width, height: photo.height, hint: said);
     expect(found.practice, isTrue);
     final d = found.value.first;
-    final item = await s.addItem(name: '커피 머신', kind: d.kind, condition: d.condition, description: said, photo: photo, suggestion: d.suggestion, reason: d.reason);
+    final item = await s.addItem(
+      name: '커피 머신',
+      kind: d.kind,
+      condition: d.condition,
+      description: said,
+      photo: photo,
+      suggestion: d.suggestion,
+      reason: d.reason,
+    );
 
     // 3) 분류 추천
     final sug = await s.ai.suggest(s.uid, s.user, item);
