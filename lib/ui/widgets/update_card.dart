@@ -179,10 +179,10 @@ Future<void> showAndroidUpdateDialog(BuildContext context, UpdateInfo info) asyn
                 const Text('안드로이드는 예전 앱 위에 덮어 설치할 수 없어요. 예전 앱을 지우면 앱 안의 물건·사진·설정도 함께 지워지니, 꼭 이 순서대로 해 주세요.', style: TextStyle(fontSize: 18)),
                 const SizedBox(height: 12),
                 const StepList(androidUpdateSteps),
-                if (info.notes.trim().isNotEmpty) ...[
+                if (changesOnly(info.notes).isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  Text('이번 버전 안내', style: Theme.of(ctx).textTheme.titleMedium),
-                  Text(info.notes.trim(), style: const TextStyle(fontSize: 16)),
+                  Text('바뀐 점', style: Theme.of(ctx).textTheme.titleMedium),
+                  Text(changesOnly(info.notes), style: const TextStyle(fontSize: 16)),
                 ],
               ],
             ),
@@ -221,6 +221,13 @@ Future<void> showAndroidUpdateDialog(BuildContext context, UpdateInfo info) asyn
       },
     ),
   );
+}
+
+/// 새 버전 안내 글에서 "바뀐 점"만 (설치 방법은 위 순서 목록으로 이미 보여 주므로)
+String changesOnly(String notes) {
+  const mark = '■ 바뀐 점';
+  final i = notes.indexOf(mark);
+  return (i < 0 ? notes : notes.substring(i + mark.length)).trim();
 }
 
 /// 새 설치 파일(또는 공개 내려받기 화면)을 브라우저로 엽니다. 못 열면 주소를 복사해 알려 줘요.

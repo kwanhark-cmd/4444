@@ -1,16 +1,7 @@
-import java.util.Properties
-
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-}
-
-// 서명 열쇠: android/key.properties (GitHub Actions가 Secrets에서 만듦, 저장소에 올리지 않음).
-// 같은 열쇠로 서명해야 새 버전을 덮어쓰기 설치할 수 있으므로 절대 바꾸지 마세요.
-val keystoreProps = Properties().apply {
-    val f = rootProject.file("key.properties")
-    if (f.exists()) f.inputStream().use { load(it) }
 }
 
 android {
@@ -39,20 +30,11 @@ android {
         versionName = flutter.versionName
     }
 
-    signingConfigs {
-        create("release") {
-            if (keystoreProps.isNotEmpty()) {
-                storeFile = file(keystoreProps.getProperty("storeFile"))
-                storePassword = keystoreProps.getProperty("storePassword")
-                keyAlias = keystoreProps.getProperty("keyAlias")
-                keyPassword = keystoreProps.getProperty("keyPassword")
-            }
-        }
-    }
-
     buildTypes {
         release {
-            signingConfig = if (keystoreProps.isNotEmpty()) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
+            // 고정 서명 열쇠를 쓰지 않아요 (주인 결정). 빌드할 때마다 서명이 달라서 예전 앱 위에 덮어 설치는 안 되고,
+            // 새 버전은 "백업 파일을 앱 밖에 저장 → 예전 앱 지우기 → 새로 설치 → 백업에서 되살리기"로 바꿔요.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 }

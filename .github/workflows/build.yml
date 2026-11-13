@@ -54,29 +54,15 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
-      - name: 서명 열쇠 준비 (GitHub Secrets — 절대 바꾸지 말 것)
-        env:
-          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-        run: |
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.jks
-            printf "storeFile=release.jks\nstorePassword=%s\nkeyAlias=binugi\nkeyPassword=%s\n" "$KEYSTORE_PASSWORD" "$KEYSTORE_PASSWORD" > android/key.properties
-            echo "고정 서명 열쇠 사용"
-            echo fixed > signing-kind.txt
-          else
-            echo temp > signing-kind.txt
-            echo "::warning::ANDROID_KEYSTORE_BASE64 비밀 값이 없어 임시 열쇠로 서명합니다. 이 APK는 다음 버전으로 덮어쓰기 설치가 안 됩니다."
-          fi
       - run: flutter pub get
-      - run: flutter build apk --release
+      # 서명 열쇠 없이 빌드 (빌드마다 임시 서명). 새 버전은 백업 → 예전 앱 지우기 → 새로 설치 → 되살리기.
+      - name: APK 만들기 (가끔 내려받기 실패가 있어 한 번 더 시도)
+        run: flutter build apk --release || (echo "다시 시도합니다" && sleep 30 && flutter build apk --release)
       - run: cp build/app/outputs/flutter-apk/app-release.apk binugi-android.apk
       - uses: actions/upload-artifact@v5
         with:
           name: 안드로이드-APK
-          path: |
-            binugi-android.apk
-            signing-kind.txt
+          path: binugi-android.apk
 
   windows:
     name: 윈도우
@@ -141,23 +127,18 @@ jobs:
         run: |
           VER=$(grep -E '^version:' pubspec.yaml | sed -E 's/version:\s*([0-9.]+).*/\1/')
           echo "version=$VER" >> "$GITHUB_OUTPUT"
-          # CHANGELOG.md에서 이 버전 부분만 뽑아 바뀐 내용으로
-          awk -v v="## $VER" '$0==v{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md
-          printf "\n\n설치 방법: 받은 파일로 덮어쓰기 설치하면 물건·사진·설정이 그대로 남아요.\n" >> notes.md
+          # 맨 위: 설치 방법 (안드로이드 = 백업 먼저). 이미 설치된 앱의 새 버전 창에 이 글의 앞부분이 보여요.
+          cp .github/release_notes_head.md notes.md
+          # 그 아래: CHANGELOG.md에서 이 버전 부분만 뽑아 바뀐 점으로
+          awk -v v="## $VER" '$0==v{f=1;next} /^## /{f=0} f' CHANGELOG.md >> notes.md
       - uses: actions/download-artifact@v5
         with:
           path: dist
           merge-multiple: true
-      - name: 임시 서명 APK는 올리지 않음 (덮어쓰기 업데이트가 안 되므로)
-        run: |
-          if [ "$(cat dist/signing-kind.txt 2>/dev/null)" != "fixed" ]; then
-            rm -f dist/binugi-android.apk
-            printf "\n안드로이드 설치 파일은 서명 열쇠를 등록한 뒤 이 화면에 추가돼요.\n" >> notes.md
-          fi
-      # 같은 버전이 이미 있으면 파일만 새로 바꿔 올림 (서명 열쇠 등록 후 다시 실행하면 APK가 추가됨)
+      # 같은 버전이 이미 있으면 파일만 새로 바꿔 올림. 네 가지 설치 파일(안드로이드 APK 포함)이 모두 있어야 올림.
       - uses: softprops/action-gh-release@v2
         with:
-          fail_on_unmatched_files: false
+          fail_on_unmatched_files: true
           tag_name: v${{ steps.v.outputs.version }}
           name: 비우기 비서 ${{ steps.v.outputs.version }}
           body_path: notes.md
