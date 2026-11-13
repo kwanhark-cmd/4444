@@ -53,10 +53,16 @@ abstract class MediaPicker {
   /// 글자 파일 내용 읽기 (AI 열쇠, 구글 JSON, 제미나이 정리 파일 등)
   Future<String?> pickTextFile({List<String> extensions = const ['txt', 'csv', 'md', 'json']});
   Future<String?> chooseSaveFolder();
+
+  /// 앱이 만든 파일(백업 등)의 복사본을 앱 밖에 저장합니다.
+  /// 안드로이드: 시스템 "저장 위치 고르기" 화면(다운로드 폴더·드라이브 등) — 앱을 지워도 남아요.
+  /// 컴퓨터: 저장할 폴더 고르기. 저장했으면 위치(파일 이름이나 경로), 사용자가 취소하면 null, 실패하면 예외.
+  Future<String?> saveCopyOutside(File file, {String mime = 'application/octet-stream'});
 }
 
 class DeviceMediaPicker implements MediaPicker {
   final _picker = ImagePicker();
+  static const _files = MethodChannel('binugi/files');
 
   @override
   bool get hasCamera => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
@@ -143,5 +149,18 @@ class DeviceMediaPicker implements MediaPicker {
     } catch (_) {
       return null;
     }
+  }
+
+  @override
+  Future<String?> saveCopyOutside(File file, {String mime = 'application/octet-stream'}) async {
+    final name = file.uri.pathSegments.last;
+    if (Platform.isAndroid) {
+      // 앱 전용 폴더는 앱을 지우면 함께 지워지므로, 시스템 저장 화면으로 앱 밖에 복사합니다.
+      return _files.invokeMethod<String>('saveCopy', {'path': file.path, 'name': name, 'mime': mime});
+    }
+    final dir = await chooseSaveFolder();
+    if (dir == null) return null;
+    final out = await file.copy('$dir${Platform.pathSeparator}$name');
+    return out.path;
   }
 }

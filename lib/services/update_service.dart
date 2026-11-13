@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:archive/archive_io.dart';
 import 'package:http/http.dart' as http;
-import 'package:open_filex/open_filex.dart';
 import 'package:path/path.dart' as p;
 
 import '../core/errors.dart';
@@ -111,15 +110,13 @@ class UpdateService {
     return f;
   }
 
-  /// 설치 시작. 데스크톱은 설치 도우미를 띄운 뒤 앱을 닫습니다(true 반환 시 앱 종료 필요).
+  /// 설치 시작 (컴퓨터만). 설치 도우미를 띄운 뒤 앱을 닫습니다(true 반환 시 앱 종료 필요).
+  /// 안드로이드는 앱 안에서 설치하지 않아요: 서명 열쇠를 쓰지 않아 예전 앱 위에 덮어 설치가 안 되므로
+  /// 백업 → 예전 앱 지우기 → 새로 설치 → 되살리기 순서를 안내합니다 (update_card.dart).
   Future<bool> install(File file) async {
     switch (os) {
       case 'android':
-        final r = await OpenFilex.open(file.path, type: 'application/vnd.android.package-archive');
-        if (r.type != ResultType.done) {
-          throw UserFacingException('설치 화면을 열지 못했어요. 설정에서 "이 앱의 설치 허용"을 켜 주세요. (${r.message})');
-        }
-        return false;
+        throw UserFacingException('안드로이드는 앱 안에서 설치하지 않아요. 백업 파일을 만든 뒤 내려받기 화면에서 새 파일을 받아 주세요.');
       case 'windows':
         await Process.start(file.path, ['/SILENT', '/CLOSEAPPLICATIONS', '/RESTARTAPPLICATIONS'], mode: ProcessStartMode.detached);
         return true;

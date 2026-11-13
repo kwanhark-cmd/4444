@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/errors.dart';
+import '../../core/platform.dart';
 import '../../data/database.dart';
 import '../../data/settings.dart';
 import '../../services/ai/ai_provider.dart';
@@ -14,6 +14,7 @@ import '../../services/media_picker.dart';
 import '../../services/storage_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../widgets/backup_actions.dart';
 import '../widgets/common.dart';
 import '../widgets/gmail_card.dart';
 import '../widgets/report.dart';
@@ -587,49 +588,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showMessage('${bytesKo(freed)}를 비웠어요');
   }
 
-  Future<void> _backup() async {
-    final pw = await askText(context, title: '백업 비밀번호', hint: '4글자 이상 · 꼭 기억해 두세요');
-    if (pw == null || !mounted) return;
-    final picker = context.read<MediaPicker>();
-    try {
-      final f = await s.backup.createFile(pw, appVersion: appVersion);
-      final dir = await picker.chooseSaveFolder();
-      var where = f.path;
-      if (dir != null) {
-        final out = await f.copy('$dir${Platform.pathSeparator}${f.uri.pathSegments.last}');
-        where = out.path;
-      }
-      await Clipboard.setData(ClipboardData(text: where));
-      showMessage('백업을 만들었어요 (위치 복사됨): $where');
-    } on UserFacingException catch (e) {
-      showMessage(e.message);
-    } catch (e, st) {
-      await showFailure(null, stage: '저장', message: '백업을 만들지 못했어요. 저장 공간을 확인해 주세요.', error: e, stack: st, onRetry: _backup);
-    }
-  }
+  Future<void> _backup() => makeBackupFile(context);
 
-  Future<void> _restore() async {
-    final path = await context.read<MediaPicker>().pickBackupFile();
-    if (path == null || !mounted) return;
-    final ok = await confirmTwice(context, title: '백업에서 되살리기', first: '지금 기기의 물건 목록이 백업 내용으로 바뀌어요.', second: '지금 자료는 사라져요. 계속할까요?', okLabel: '되살리기');
-    if (!ok || !mounted) return;
-    final pw = await askText(context, title: '백업 비밀번호');
-    if (pw == null) return;
-    try {
-      await s.backup.restoreBytes(await File(path).readAsBytes(), pw);
-      await s.reloadAfterRestore();
-      showMessage('백업에서 되살렸어요');
-    } on UserFacingException catch (e) {
-      await showFailure(null, stage: '백업', message: e.message, onRetry: _restore);
-    } catch (e, st) {
-      await showFailure(null, stage: '백업', message: '되살리지 못했어요. 파일이 맞는지 확인해 주세요.', error: e, stack: st, onRetry: _restore);
-    }
-  }
+  Future<void> _restore() => restoreFromBackupFile(context);
 
   Future<void> _restoreSafety() async {
     final list = s.backup.safetyBackups();
     if (list.isEmpty) {
-      showMessage('자동 백업이 아직 없어요. (업데이트·자료 변환 전에 자동으로 만들어져요)');
+      showMessage(isAndroidDevice ? '자동 백업이 아직 없어요. (자료 변환 전에 자동으로 만들어져요. 앱을 지우면 함께 지워져요)' : '자동 백업이 아직 없어요. (업데이트·자료 변환 전에 자동으로 만들어져요)');
       return;
     }
     final f = list.first;

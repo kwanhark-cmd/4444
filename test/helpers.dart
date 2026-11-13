@@ -64,6 +64,13 @@ class FakePicker implements MediaPicker {
   PickException? cameraError;
   int pickCalls = 0;
   String? textFile;
+
+  /// 앱 밖 저장 흉내: 이 값이 있으면 저장한 것으로(파일 이름), null이면 사용자가 취소한 것으로.
+  String? saveOutsideAs;
+
+  /// 앱 밖에 저장하려고 넘겨받은 파일들 (내용 확인용 복사본 위치)
+  final List<File> savedOutside = [];
+  int saveOutsideCalls = 0;
   FakePicker({List<PickedFile>? photos, this.camera = false, this.cameraError, this.textFile}) : photos = photos ?? [];
   @override
   bool get hasCamera => camera;
@@ -87,6 +94,16 @@ class FakePicker implements MediaPicker {
   Future<String?> pickBackupFile() async => backup;
   @override
   Future<String?> chooseSaveFolder() async => null;
+  @override
+  Future<String?> saveCopyOutside(File file, {String mime = 'application/octet-stream'}) async {
+    saveOutsideCalls++;
+    if (saveOutsideAs == null) return null;
+    // 진짜 "앱 밖" 대신 임시 폴더에 복사 → 앱 폴더를 지워도 남는지 테스트에서 확인
+    final out = await Directory.systemTemp.createTemp('binugi_outside_');
+    savedOutside.add(await file.copy('${out.path}${Platform.pathSeparator}$saveOutsideAs'));
+    return saveOutsideAs;
+  }
+
   @override
   Future<String?> pickTextFile({List<String> extensions = const []}) async => textFile ?? '이름,분류\n커피 머신,판매';
 }

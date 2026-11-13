@@ -7,6 +7,7 @@ import '../../services/media_picker.dart';
 import '../../services/voice_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../widgets/backup_actions.dart';
 import '../widgets/common.dart';
 
 /// 첫 실행 마법사: 글씨 크기 → 권한 → 사는 지역 → AI 연결(건너뛰기 가능)
@@ -131,6 +132,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               },
             ),
           ),
+        const SizedBox(height: AppSizes.gap),
+        Text('새 버전으로 바꾸는 중인가요?', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: AppSizes.gapSmall),
+        const Text('예전 앱에서 만든 백업 파일이 있으면 여기서 바로 되살릴 수 있어요. 되살리면 처음 설정은 건너뛰어요.', style: TextStyle(fontSize: 17)),
+        const SizedBox(height: AppSizes.gapSmall),
+        BigButton(label: '백업에서 되살리기', emoji: 'folder', color: p.primary, onTap: () => restoreFromBackupFile(context)),
       ],
     );
   }

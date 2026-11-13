@@ -37,7 +37,6 @@ dependencies:
   flutter_secure_storage: 11.2.0
   window_manager: 0.5.1
   url_launcher: 6.3.3
-  open_filex: 5.0.0
 
 dev_dependencies:
   flutter_test:

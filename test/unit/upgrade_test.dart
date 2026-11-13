@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:archive/archive_io.dart';
 import 'package:binugi/core/clock.dart';
+import 'package:binugi/core/errors.dart';
 import 'package:binugi/data/database.dart';
 import 'package:binugi/data/models.dart';
 import 'package:binugi/services/data_location.dart';
@@ -82,6 +83,51 @@ void main() {
     expect(await migrateLegacyData(newRoot, legacyRoot: legacy), isFalse, reason: '두 번 옮기지 않음');
     final (s, _) = await makeState(root: newRoot, dbPath: p.join(newRoot.path, 'binugi.db'));
     expect((await s.repo.items(s.uid)).length, 40);
+  });
+
+  test('안드로이드 새 버전 방법: 백업 파일(앱 밖에 저장) → 예전 앱 지우기 → 새로 설치 → 되살리기', () async {
+    // 예전 앱: 실제 이전 버전 자료(물건 41개·사진·사연·판매 상태·설정)
+    final dir = await unpackOldData();
+    final (old, _) = await makeState(root: dir, dbPath: p.join(dir.path, 'binugi.db'), secrets: MemorySecretStore());
+    final f = await old.backup.createFile('1234', appVersion: appVersion);
+    expect(p.isWithin(dir.path, f.path), isTrue, reason: '처음 만든 곳은 앱 안 (앱을 지우면 함께 지워짐)');
+    final picker = FakePicker()..saveOutsideAs = '비우기백업_옮기기.binugi';
+    expect(await picker.saveCopyOutside(f), '비우기백업_옮기기.binugi');
+    final outside = picker.savedOutside.single;
+    expect(p.isWithin(dir.path, outside.path), isFalse, reason: '앱 밖');
+
+    // 예전 앱 지우기 = 앱 폴더 전체(자료·사진·앱 안 백업)와 보안 저장소(AI 열쇠)가 사라짐
+    await old.repo.db.close();
+    await dir.delete(recursive: true);
+    expect(outside.existsSync(), isTrue, reason: '앱 밖 백업 파일은 남음');
+
+    // 새로 설치: 빈 앱, 처음 설정 화면부터
+    final (fresh, _) = await makeState(secrets: MemorySecretStore());
+    expect(fresh.global.onboarded, isFalse);
+    expect(fresh.items, isEmpty);
+    await expectLater(fresh.backup.restoreBytes(await outside.readAsBytes(), '틀림'), throwsA(anything));
+    await fresh.backup.restoreBytes(await outside.readAsBytes(), '1234');
+    await fresh.reloadAfterRestore();
+
+    final items = await fresh.repo.items(fresh.uid);
+    expect(items.length, 40);
+    expect(items.every((i) => i.photoPath != null && File(fresh.paths.abs(i.photoPath!)).existsSync()), isTrue, reason: '사진도 되살아남');
+    expect(items.where((i) => i.story.contains('소중한 기억')).length, 4);
+    expect(items.where((i) => i.saleStatus == SaleStatus.sold).length, 5);
+    expect(items.where((i) => i.decision == Decision.discard).length, 10);
+    expect(fresh.users.length, 2, reason: '다른 사용자도 되살아남');
+    expect(fresh.global.onboarded, isTrue, reason: '되살리면 처음 설정은 건너뜀');
+    expect(fresh.global.textSize, TextSizeChoice.huge);
+    expect(fresh.global.theme, ThemeModeChoice.dark);
+    expect(fresh.user.sigungu, '마포구');
+    expect(fresh.user.apiKey, isEmpty, reason: 'AI 열쇠는 백업에 넣지 않으니 새 앱에서 다시 넣음');
+  });
+
+  test('안드로이드는 앱 안에서 APK를 설치하지 않음', () async {
+    final (s, _) = await makeState();
+    final svc = UpdateService(client: MockClient((_) async => http.Response('', 404)), paths: s.paths, currentVersion: '1.1.0', os: 'android');
+    final apk = File(p.join(s.paths.root.path, 'a.apk'))..writeAsBytesSync([1, 2, 3]);
+    await expectLater(svc.install(apk), throwsA(isA<UserFacingException>()));
   });
 
   test('자동 백업에서 되살리기', () async {

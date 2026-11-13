@@ -12,6 +12,7 @@ void main() {
     const allowed = {
       'api.anthropic.com', // AI (사용자가 켰을 때만)
       'api.github.com', // 업데이트 확인
+      'github.com', // 새 버전 내려받기 화면 (브라우저로 열기만)
       'accounts.google.com', 'oauth2.googleapis.com', 'gmail.googleapis.com', 'console.cloud.google.com', // 지메일(읽기 전용)
       'www.daangn.com', 'm.bunjang.co.kr', // 열기만
       '127.0.0.1',
