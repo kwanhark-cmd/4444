@@ -28,7 +28,7 @@ import '../services/video_service.dart';
 import '../services/voice_service.dart';
 
 /// 앱 버전 (pubspec.yaml의 version과 같아야 함 — 테스트로 확인)
-const appVersion = '1.1.1';
+const appVersion = '1.2.0';
 
 /// 화면 전체가 함께 쓰는 상태
 class AppState extends ChangeNotifier {
