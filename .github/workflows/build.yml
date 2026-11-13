@@ -22,7 +22,7 @@ jobs:
           channel: stable
           cache: true
       - name: 리눅스 빌드 도구
-        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev ninja-build clang cmake pkg-config liblzma-dev libsqlite3-dev libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libsecret-1-dev
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev ninja-build clang cmake pkg-config liblzma-dev libsqlite3-dev libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libsecret-1-dev libjpeg-dev
       - run: flutter pub get
       - name: 형식 검사
         run: dart format --output=none --set-exit-if-changed --line-length 160 lib test test_screens
