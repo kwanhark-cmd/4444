@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/format.dart';
+import '../../core/platform.dart';
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/export_actions.dart';
 import 'discard_screen.dart';
 import 'home_screen.dart';
 import 'sell_screen.dart';
@@ -69,9 +71,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     final it = item!;
     final t = await listenOrType(context, title: '이 물건에 얽힌 이야기', hint: '예: 결혼 10주년에 남편이 사 준 커피 머신', initial: it.story, lines: 4);
     if (t == null || !mounted) return;
-    final dir = await context.read<AppState>().saveStory(it, t.trim());
-    if (mounted) toast(context, '사연을 저장했어요. (1번 앱용 폴더: ${dir.path.split(RegExp(r'[\\/]')).reversed.take(2).toList().reversed.join('/')})');
+    final s = context.read<AppState>();
+    final dir = await s.saveStory(it, t.trim());
+    if (!mounted) return;
     setState(() {});
+    if (isAndroidDevice) {
+      // 안드로이드: 사진·사연을 zip 파일 하나로 묶어 저장 화면으로 앱 밖에 저장
+      await saveBundleOutside(context, dir, label: '사연', itemName: it.name, what: '사연', note: '(사연 글은 이 물건에도 저장했어요)');
+    } else {
+      toast(context, '사연을 저장했어요. (내보내기 폴더: ${dir.path.split(RegExp(r'[\\/]')).reversed.take(2).toList().reversed.join('/')})');
+    }
   }
 
   @override

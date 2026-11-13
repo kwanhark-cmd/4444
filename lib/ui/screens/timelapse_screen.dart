@@ -7,11 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/format.dart';
+import '../../core/platform.dart';
 import '../../data/models.dart';
 import '../../services/media_picker.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/export_actions.dart';
 import 'home_screen.dart';
 
 /// 집 비우기 타임랩스: 같은 자리에서 주기적으로 찍은 사진을 이어 보기
@@ -146,13 +148,18 @@ class _TimelapsePlayerState extends State<TimelapsePlayer> {
         final credits = await renderCredits(s.stats, widget.spot, s.currentUser?.name ?? '', width: portrait ? 720 : 1280, height: portrait ? 1280 : 720);
         f = await s.timelapse.makeMp4(list, creditsPng: credits, spot: widget.spot, portrait: portrait);
       }
-      showMessage('1번 앱용 폴더에 저장했어요: ${f.path.split(RegExp(r'[\\/]')).last}');
+      if (mounted) setState(() => making = false);
+      if (isAndroidDevice) {
+        // 안드로이드: 앱 전용 폴더는 휴대폰에서 꺼낼 수 없고 앱을 지우면 사라져서, 저장 화면으로 앱 밖에 저장
+        await saveExportOutside(null, f, what: kind == 'gif' ? '타임랩스 움직이는 그림' : '타임랩스 영상', mime: kind == 'gif' ? 'image/gif' : 'video/mp4');
+      } else {
+        showMessage('내보내기 폴더(1번앱_타임랩스)에 저장했어요: ${f.path.split(RegExp(r'[\\/]')).last} · 설정 → 자료 관리에서 폴더 위치를 복사할 수 있어요');
+      }
     } catch (e, st) {
       if (mounted) setState(() => making = false);
       await showFailure(null, stage: '타임랩스', message: '타임랩스를 만들지 못했어요. 사진이 너무 많으면 몇 장을 지워 보세요.', error: e, stack: st, onRetry: () => _make(kind));
       return;
     }
-    if (mounted) setState(() => making = false);
   }
 
   @override
@@ -195,6 +202,7 @@ class _TimelapsePlayerState extends State<TimelapsePlayer> {
               child: Column(children: [LinearProgressIndicator(), SizedBox(height: 6), Text('만드는 중이에요… 사진이 많으면 1분쯤 걸려요')]),
             ),
           Text('유튜브용 영상 (MP4, 엔딩 크레딧 포함)', style: Theme.of(context).textTheme.titleMedium),
+          if (isAndroidDevice) const Text(exportWhereAndroid, style: TextStyle(fontSize: 16)),
           const SizedBox(height: 8),
           Row(
             children: [

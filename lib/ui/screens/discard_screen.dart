@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/platform.dart';
 import '../../data/models.dart';
 import '../../services/disposal_guide.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/celebrate.dart';
 import '../widgets/common.dart';
+import '../widgets/export_actions.dart';
 import 'home_screen.dart';
 import 'settings_screen.dart';
 
@@ -141,8 +143,14 @@ class _DiscardDetailScreenState extends State<DiscardDetailScreen> {
                 if (t != null) it.story = t.trim();
               }
               final dir = await s.keepDigitallyAndDiscard(it);
-              if (context.mounted) toast(context, '3번 앱용 폴더에 저장했어요: ${dir.path.split(RegExp(r'[\\/]')).last}');
               _load();
+              if (!context.mounted) return;
+              if (isAndroidDevice) {
+                // 안드로이드: 사진·사연을 zip 파일 하나로 묶어 저장 화면으로 앱 밖에 저장
+                await saveBundleOutside(context, dir, label: '디지털기록', itemName: it.name, what: '디지털 기록');
+              } else {
+                toast(context, '내보내기 폴더(3번앱_디지털기록)에 저장했어요: ${dir.path.split(RegExp(r'[\\/]')).last}');
+              }
             },
           ),
           const SectionTitle('다 버렸나요?'),

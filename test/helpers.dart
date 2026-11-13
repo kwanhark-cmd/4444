@@ -71,6 +71,9 @@ class FakePicker implements MediaPicker {
   /// 앱 밖에 저장하려고 넘겨받은 파일들 (내용 확인용 복사본 위치)
   final List<File> savedOutside = [];
   int saveOutsideCalls = 0;
+
+  /// 앱 밖 저장 때 넘겨받은 파일 종류 (video/mp4 등)
+  final List<String> savedMimes = [];
   FakePicker({List<PickedFile>? photos, this.camera = false, this.cameraError, this.textFile}) : photos = photos ?? [];
   @override
   bool get hasCamera => camera;
@@ -97,6 +100,7 @@ class FakePicker implements MediaPicker {
   @override
   Future<String?> saveCopyOutside(File file, {String mime = 'application/octet-stream'}) async {
     saveOutsideCalls++;
+    savedMimes.add(mime);
     if (saveOutsideAs == null) return null;
     // 진짜 "앱 밖" 대신 임시 폴더에 복사 → 앱 폴더를 지워도 남는지 테스트에서 확인
     final out = await Directory.systemTemp.createTemp('binugi_outside_');

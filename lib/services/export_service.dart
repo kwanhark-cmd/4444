@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:archive/archive.dart';
 import 'package:path/path.dart' as p;
 
 import '../core/format.dart';
@@ -51,6 +52,21 @@ class ExportService {
 
   /// 디지털로 남기고 버리기 → 3번 앱용 폴더
   Future<Directory> exportDigitalKeep(Item item, DateTime now) => _bundle(paths.exportDigital, item, now);
+
+  /// 사연·디지털 기록 폴더(사진·사연.txt·info.json)를 zip 파일 하나로 묶습니다.
+  /// 안드로이드는 저장 화면에 파일 하나만 넘길 수 있어 폴더 대신 이 파일을 앱 밖에 저장합니다.
+  /// 이름 예: 사연_여행 기념품.zip (폴더 옆, 같은 내보내기 폴더 안)
+  Future<File> zipBundle(Directory dir, {required String label, required String itemName}) async {
+    final archive = Archive();
+    final folder = _safe('${label}_$itemName');
+    for (final e in dir.listSync().whereType<File>()) {
+      final bytes = await e.readAsBytes();
+      archive.addFile(ArchiveFile('$folder/${p.basename(e.path)}', bytes.length, bytes));
+    }
+    final out = File(p.join(dir.parent.path, '$folder.zip'));
+    await out.writeAsBytes(ZipEncoder().encode(archive));
+    return out;
+  }
 
   Future<File> exportReport(String text, DateTime now) async {
     final f = File(p.join(paths.exportReports.path, '문제신고_${now.millisecondsSinceEpoch}.txt'));

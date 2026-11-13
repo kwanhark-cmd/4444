@@ -16,6 +16,7 @@ import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/backup_actions.dart';
 import '../widgets/common.dart';
+import '../widgets/export_actions.dart';
 import '../widgets/gmail_card.dart';
 import '../widgets/report.dart';
 import '../widgets/status_chips.dart';
@@ -429,16 +430,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
               s.user.keepOriginals = v;
               s.saveUser();
             }, sub: '끄면 줄인 사진만 저장해 공간을 아껴요'),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Emoji3D('folder', size: 36),
-              title: const Text('내보내기 폴더 (위치 복사)', style: TextStyle(fontSize: 18)),
-              subtitle: Text(s.paths.exports.path, style: const TextStyle(fontSize: 14)),
-              onTap: () {
-                Clipboard.setData(ClipboardData(text: s.paths.exports.path));
-                showMessage('폴더 위치를 복사했어요');
-              },
-            ),
+            if (isAndroidDevice)
+              // 안드로이드: 앱 전용 폴더 위치는 휴대폰에서 열 수 없으니 보여 주지 않고, 저장 화면으로 저장한다고 안내
+              const ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Emoji3D('folder', size: 36),
+                title: Text('내보내기 파일은 저장 화면에서 고른 곳에', style: TextStyle(fontSize: 18)),
+                subtitle: Text(exportSettingsAndroid, style: TextStyle(fontSize: 16)),
+              )
+            else
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Emoji3D('folder', size: 36),
+                title: const Text('내보내기 폴더 (위치 복사)', style: TextStyle(fontSize: 18)),
+                subtitle: Text(s.paths.exports.path, style: const TextStyle(fontSize: 14)),
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: s.paths.exports.path));
+                  showMessage('폴더 위치를 복사했어요');
+                },
+              ),
           ]),
 
           // ---------- 앱 정보 ----------
