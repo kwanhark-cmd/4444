@@ -45,7 +45,10 @@ class Pressable extends StatefulWidget {
   final Widget Function(BuildContext context, bool pressed) builder;
   final VoidCallback? onTap;
   final String? semanticLabel;
-  const Pressable({super.key, required this.builder, this.onTap, this.semanticLabel});
+
+  /// 키보드로 골랐을 때 둘레 띠의 둥글기 (버튼 모양과 맞춤)
+  final double radius;
+  const Pressable({super.key, required this.builder, this.onTap, this.semanticLabel, this.radius = AppSizes.radius});
   @override
   State<Pressable> createState() => _PressableState();
 }
@@ -56,25 +59,57 @@ void feedback(BuildContext context) {
   if (s.sound) SystemSound.play(SystemSoundType.click);
 }
 
+/// 누를 수 있는 모든 큰 버튼·타일의 바탕: 누르면 눌린 모양, 키보드(Tab)로 고르면 또렷한 3px 띠, Enter·스페이스로 누름.
 class _PressableState extends State<Pressable> {
   bool _down = false;
+  bool _focus = false;
+
+  void _activate() {
+    feedback(context);
+    widget.onTap!();
+  }
+
   @override
   Widget build(BuildContext context) {
     final m = context.motion;
+    final p = context.palette;
+    final enabled = widget.onTap != null;
     return Semantics(
       button: true,
       label: widget.semanticLabel,
-      child: GestureDetector(
-        onTapDown: widget.onTap == null ? null : (_) => setState(() => _down = true),
-        onTapCancel: () => setState(() => _down = false),
-        onTapUp: (_) => setState(() => _down = false),
-        onTap: widget.onTap == null
-            ? null
-            : () {
-                feedback(context);
-                widget.onTap!();
-              },
-        child: AnimatedScale(scale: _down ? 0.96 : 1, duration: m.fast, curve: Curves.easeOutBack, child: widget.builder(context, _down)),
+      child: FocusableActionDetector(
+        enabled: enabled,
+        mouseCursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
+        onShowFocusHighlight: (v) => setState(() => _focus = v),
+        actions: {
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) {
+              _activate();
+              return null;
+            },
+          ),
+        },
+        child: GestureDetector(
+          onTapDown: enabled ? (_) => setState(() => _down = true) : null,
+          onTapCancel: () => setState(() => _down = false),
+          onTapUp: (_) => setState(() => _down = false),
+          onTap: enabled ? _activate : null,
+          child: AnimatedScale(
+            scale: _down ? 0.96 : 1,
+            duration: m.fast,
+            curve: Curves.easeOutBack,
+            child: DecoratedBox(
+              position: DecorationPosition.foreground,
+              decoration: _focus && enabled
+                  ? BoxDecoration(
+                      border: Border.all(color: p.focus, width: AppSizes.focusWidth),
+                      borderRadius: BorderRadius.circular(widget.radius),
+                    )
+                  : const BoxDecoration(),
+              child: widget.builder(context, _down),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -160,45 +195,58 @@ class BigButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final bg = onTap == null ? p.border : (color ?? p.primary);
-    final fg = onTap == null ? p.muted : (textColor ?? (color == null ? p.onPrimary : Colors.white));
+    final base = onTap == null ? p.border : p.strongFill(color ?? p.primary);
+    // 글자색은 테마가 정함: 넘겨받은 색이 7:1이 안 되면 흰색/거의 검정 중 더 또렷한 쪽
+    final fg = onTap == null ? p.muted : readableOn(context, base, textColor);
+    final edge = onTap == null ? null : p.buttonEdge;
     final child = Pressable(
       semanticLabel: label,
       onTap: onTap,
-      builder: (context, pressed) => AnimatedContainer(
-        duration: context.motion.fast,
-        constraints: const BoxConstraints(minHeight: AppSizes.buttonMinHeight, minWidth: AppSizes.touchMin),
-        margin: EdgeInsets.only(top: pressed ? 3 : 0),
-        padding: EdgeInsets.only(bottom: pressed ? 1 : 4),
-        decoration: BoxDecoration(
-          color: Color.lerp(bg, Colors.black, 0.35),
-          borderRadius: BorderRadius.circular(AppSizes.radius),
-          boxShadow: onTap == null ? null : AppShadows.raised(p, pressed: pressed),
-        ),
-        child: Container(
-          constraints: BoxConstraints(minHeight: AppSizes.buttonMinHeight - (pressed ? 1 : 4)),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AppSizes.radius)),
-          child: Row(
-            mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (emoji != null) ...[Emoji3D(emoji!, size: 32), const SizedBox(width: 10)],
-              if (icon != null) ...[Icon(icon, color: fg, size: 28), const SizedBox(width: 10)],
-              Flexible(
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: fg, fontSize: 18, fontWeight: FontWeight.w700, fontFamily: appFont),
-                ),
-              ),
-            ],
+      builder: (context, pressed) {
+        // 누르는 동안: 눌려 들어가고(두께 줄어듦) 색도 확실히 진해짐
+        final bg = pressed ? p.pressedFill(base) : base;
+        return AnimatedContainer(
+          duration: context.motion.fast,
+          constraints: const BoxConstraints(minHeight: AppSizes.buttonMinHeight, minWidth: AppSizes.touchMin),
+          margin: EdgeInsets.only(top: pressed ? 3 : 0),
+          padding: EdgeInsets.only(bottom: pressed ? 1 : 4),
+          decoration: BoxDecoration(
+            color: Color.lerp(base, Colors.black, 0.35),
+            borderRadius: BorderRadius.circular(AppSizes.radius),
+            border: edge == null ? null : Border.all(color: edge, width: AppSizes.outlineWidth),
+            boxShadow: onTap == null ? null : AppShadows.raised(p, pressed: pressed),
           ),
-        ),
-      ),
+          child: Container(
+            constraints: BoxConstraints(minHeight: AppSizes.buttonMinHeight - (pressed ? 1 : 4) - (edge == null ? 0 : 2 * AppSizes.outlineWidth)),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AppSizes.radius)),
+            child: Row(
+              mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (emoji != null) ...[Emoji3D(emoji!, size: 32), const SizedBox(width: 10)],
+                if (icon != null) ...[Icon(icon, color: fg, size: 28), const SizedBox(width: 10)],
+                Flexible(
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: fg, fontSize: AppText.button, fontWeight: AppText.buttonWeight, fontFamily: appFont),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
     return expand ? SizedBox(width: double.infinity, child: child) : child;
   }
+}
+
+/// 색 채운 곳 위 글자색: [wanted]가 7:1 이상이면 그 색, 아니면 흰색/거의 검정 중 더 또렷한 쪽 (테마 규칙)
+Color readableOn(BuildContext context, Color fill, [Color? wanted]) {
+  if (wanted != null && contrastRatio(wanted, fill) >= 7) return wanted;
+  return context.palette.onFill(fill);
 }
 
 Color decisionColor(BuildContext context, Decision? d) {
@@ -308,7 +356,7 @@ class Chip3 extends StatelessWidget {
     decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
     child: Text(
       text,
-      style: TextStyle(color: textColor ?? Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
+      style: TextStyle(color: readableOn(context, color, textColor), fontWeight: FontWeight.w700, fontSize: AppText.caption),
     ),
   );
 }
@@ -502,7 +550,11 @@ class CategoryTile extends StatelessWidget {
                 decision.label,
                 style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
               ),
-              Text(sub, style: const TextStyle(color: Colors.white, fontSize: 13.5), maxLines: 2),
+              Text(
+                sub,
+                style: const TextStyle(color: Colors.white, fontSize: AppText.caption),
+                maxLines: 2,
+              ),
             ],
           ),
         ),

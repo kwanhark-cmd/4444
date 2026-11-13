@@ -82,7 +82,7 @@ class _UpdateCardState extends State<UpdateCard> {
                       s.hasUpdate
                           ? '새 버전 ${s.global.latestVersion}이(가) 나왔어요'
                           : (isAndroidDevice ? '새 버전은 백업 → 예전 앱 지우기 → 새로 설치 순서로 바꿔요' : '물건·사진·설정은 업데이트해도 그대로 남아요'),
-                      style: const TextStyle(fontSize: 15),
+                      style: const TextStyle(fontSize: AppText.caption),
                     ),
                   ],
                 ),

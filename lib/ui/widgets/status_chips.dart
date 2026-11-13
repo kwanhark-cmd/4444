@@ -22,7 +22,7 @@ class StatusChips extends StatelessWidget {
         decoration: BoxDecoration(color: on ? p.sell : p.attention, borderRadius: BorderRadius.circular(20)),
         child: Text(
           '$label: ${on ? onText : offText}',
-          style: TextStyle(color: on ? Colors.white : p.onAttention, fontWeight: FontWeight.w700, fontSize: 14.5),
+          style: TextStyle(color: on ? Colors.white : p.onAttention, fontWeight: FontWeight.w700, fontSize: AppText.caption),
         ),
       ),
     );

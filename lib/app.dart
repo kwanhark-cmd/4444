@@ -124,7 +124,10 @@ class StartFailedApp extends StatelessWidget {
               const SizedBox(height: 16),
               const Text('기기를 다시 켠 뒤 앱을 열어 보세요. 계속 안 되면 저장 공간이 충분한지 확인해 주세요.', style: TextStyle(fontSize: 18), textAlign: TextAlign.center),
               const SizedBox(height: 16),
-              Text(AppLogger.redact(error), style: const TextStyle(fontSize: 13, color: Colors.grey)),
+              Text(
+                AppLogger.redact(error),
+                style: TextStyle(fontSize: AppText.caption, color: AppPalette.light.muted),
+              ),
             ],
           ),
         ),

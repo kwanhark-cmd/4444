@@ -39,7 +39,7 @@ void main() {
     '6_설정': (_, _) => const SettingsScreen(),
     '7_물건목록': (_, _) => const ItemListScreen(),
   };
-  for (final theme in [ThemeModeChoice.light, ThemeModeChoice.dark]) {
+  for (final theme in ThemeModeChoice.values) {
     for (final e in shots.entries) {
       testWidgets('${e.key} ${theme.name}', (tester) async {
         tester.view.physicalSize = const Size(1170, 2532);

@@ -37,7 +37,10 @@ class AppPalette {
   final Color onSurface;
   final Color muted;
   final Color shadow;
-  final Color border;
+  final Color border; // 카드·구분선 (옅은 선)
+  final Color outline; // 테두리 버튼·입력칸 테두리 (또렷한 선, 배경과 4.5:1 이상)
+  final Color focus; // 키보드·리모컨으로 고른 버튼 둘레 (또렷한 3px 띠)
+  final Color? buttonEdge; // 색 채운 버튼 테두리 (어두운 화면·고대비에서 버튼 모양이 배경과 섞이지 않게)
   final Brightness brightness;
 
   const AppPalette({
@@ -57,29 +60,62 @@ class AppPalette {
     required this.muted,
     required this.shadow,
     required this.border,
+    required this.outline,
+    required this.focus,
+    this.buttonEdge,
     required this.brightness,
   });
 
-  /// 분류 색 위의 글자는 항상 흰색 (대비 검사 통과 색만 사용)
+  /// 분류 색 위의 글자는 항상 흰색 (대비 검사 7:1 이상 통과 색만 사용)
   Color get onCategory => Colors.white;
+
+  /// 색 채운 버튼·띠 위 글자색: 흰색과 거의 검정 중 대비가 더 큰 쪽 (어느 색 위에서든 또렷하게)
+  Color onFill(Color fill) => contrastRatio(Colors.white, fill) >= contrastRatio(inkDark, fill) ? Colors.white : inkDark;
+
+  /// 색 채운 버튼 바탕: 그 위 글자(흰색/거의 검정)와 7:1이 될 때까지 조금씩 진하게(또는 밝게).
+  /// 화면에서 어떤 색을 넘겨도 버튼 글자는 항상 또렷해요 (예: 당근마켓 주황 → 진한 주황).
+  Color strongFill(Color c) {
+    var x = c;
+    for (var i = 0; i < 20 && contrastRatio(onFill(x), x) < 7; i++) {
+      x = Color.lerp(x, onFill(x) == Colors.white ? Colors.black : Colors.white, 0.08)!;
+    }
+    return x;
+  }
+
+  /// 누르고 있는 동안 버튼 색 (확실히 달라 보이게 어둡게/밝게)
+  Color pressedFill(Color fill) => Color.lerp(fill, fill.computeLuminance() > 0.4 ? Colors.black : Colors.white, 0.2)!;
+
+  /// 분류·상태 색을 "글자"로 쓸 때: 카드 위에서 7:1이 되도록 밝게(어두운 화면) 또는 어둡게(밝은 화면)
+  Color ink(Color c) {
+    var x = c;
+    final toward = brightness == Brightness.dark ? Colors.white : Colors.black;
+    for (var i = 0; i < 20 && contrastRatio(x, surface) < 7; i++) {
+      x = Color.lerp(x, toward, 0.1)!;
+    }
+    return x;
+  }
+
+  static const inkDark = Color(0xFF111111);
 
   static const light = AppPalette(
     primary: Color(0xFF2B4C7E),
     onPrimary: Colors.white,
-    accent: Color(0xFFB35900),
+    accent: Color(0xFF8A4500),
     onAccent: Colors.white,
-    use: Color(0xFF1565C0),
-    sell: Color(0xFF2E7D32),
-    discard: Color(0xFFC62828),
+    use: Color(0xFF0D47A1),
+    sell: Color(0xFF1B5E20),
+    discard: Color(0xFFA31515),
     progress: Color(0xFF6A1B9A),
     attention: Color(0xFFFFD54F),
     onAttention: Color(0xFF212121),
     background: Color(0xFFF5F3EE),
     surface: Colors.white,
     onSurface: Color(0xFF1C1C1C),
-    muted: Color(0xFF555555),
+    muted: Color(0xFF4A4A4A),
     shadow: Color(0x33000000),
     border: Color(0xFFD6D2C8),
+    outline: Color(0xFF4A4A4A),
+    focus: Color(0xFF0B57D0),
     brightness: Brightness.light,
   );
 
@@ -88,9 +124,9 @@ class AppPalette {
     onPrimary: Color(0xFF0D1B2E),
     accent: Color(0xFFFFB74D),
     onAccent: Color(0xFF1C1C1C),
-    use: Color(0xFF1565C0),
-    sell: Color(0xFF2E7D32),
-    discard: Color(0xFFC62828),
+    use: Color(0xFF0D47A1),
+    sell: Color(0xFF1B5E20),
+    discard: Color(0xFFA31515),
     progress: Color(0xFF7B1FA2),
     attention: Color(0xFFFFD54F),
     onAttention: Color(0xFF212121),
@@ -100,6 +136,9 @@ class AppPalette {
     muted: Color(0xFFBDBDBD),
     shadow: Color(0x66000000),
     border: Color(0xFF3A3A3A),
+    outline: Color(0xFFBDBDBD),
+    focus: Color(0xFFFFD54F),
+    buttonEdge: Color(0xFF9E9E9E),
     brightness: Brightness.dark,
   );
 
@@ -110,7 +149,7 @@ class AppPalette {
     onAccent: Colors.white,
     use: Color(0xFF0D47A1),
     sell: Color(0xFF1B5E20),
-    discard: Color(0xFFB71C1C),
+    discard: Color(0xFF9A1B1B),
     progress: Color(0xFF4A148C),
     attention: Color(0xFFFFEB3B),
     onAttention: Colors.black,
@@ -120,6 +159,9 @@ class AppPalette {
     muted: Color(0xFF222222),
     shadow: Color(0x55000000),
     border: Colors.black,
+    outline: Colors.black,
+    focus: Color(0xFF0B57D0),
+    buttonEdge: Colors.black,
     brightness: Brightness.light,
   );
 
@@ -151,6 +193,9 @@ class AppPalette {
     muted: muted,
     shadow: shadow,
     border: border,
+    outline: outline,
+    focus: focus,
+    buttonEdge: buttonEdge,
     brightness: brightness,
   );
 }
@@ -170,18 +215,22 @@ const colorThemes = <String, ColorTheme>{
   'lake': ColorTheme('호수 (청록)', Color(0xFF00576B), Color(0xFF8ED3E3)),
 };
 
-/// 글자 위계 4단계: 큰 숫자 > 제목 > 본문 > 설명
+/// 글자 위계 4단계: 큰 숫자 > 제목 > 본문 > 설명. 가장 작은 글자도 16 (1.2.0 보기 쉬운 화면 기준)
 class AppText {
   static const double display = 34; // 큰 숫자 (현황)
   static const double title = 22; // 화면·카드 제목
   static const double body = 17; // 본문
-  static const double caption = 14.5; // 작은 설명
+  static const double caption = 16; // 작은 설명 (본문 최소 16)
+  static const double button = 18; // 버튼 글자 (17 이상, 굵게)
+  static const FontWeight buttonWeight = FontWeight.w700;
 }
 
 /// 크기·간격·둥글기
 class AppSizes {
-  static const double buttonMinHeight = 56;
-  static const double touchMin = 48;
+  static const double buttonMinHeight = 56; // 52 이상
+  static const double touchMin = 48; // 누를 수 있는 곳 최소 48×48
+  static const double outlineWidth = 2; // 테두리 버튼·입력칸 테두리
+  static const double focusWidth = 3; // 고른 버튼 둘레 띠
   static const double radius = 18;
   static const double radiusSmall = 12;
   static const double gap = 16;
@@ -263,12 +312,68 @@ ThemeData buildTheme(ThemeModeChoice mode, {bool reduceMotion = false, String co
         bodyLarge: base.textTheme.bodyLarge?.copyWith(color: p.onSurface, fontSize: AppText.body),
         bodySmall: base.textTheme.bodySmall?.copyWith(color: p.muted, fontSize: AppText.caption),
         bodyMedium: base.textTheme.bodyMedium?.copyWith(color: p.onSurface, fontSize: 16),
+        // 작은 글자 칸도 16 이상 (Material 기본은 11~14)
+        titleSmall: base.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700, color: p.onSurface, fontSize: 16),
+        labelLarge: base.textTheme.labelLarge?.copyWith(fontWeight: AppText.buttonWeight, color: p.onSurface, fontSize: AppText.button),
+        labelMedium: base.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, color: p.onSurface, fontSize: AppText.caption),
+        labelSmall: base.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700, color: p.onSurface, fontSize: AppText.caption),
       );
   final buttonShape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radius));
   const minSize = Size(AppSizes.touchMin, AppSizes.buttonMinHeight);
+  const label = TextStyle(fontSize: AppText.button, fontWeight: AppText.buttonWeight, fontFamily: appFont);
+  // 누름·고름 표시: 누르면 확실히 진해지고, 키보드로 고르면 또렷한 띠
+  WidgetStateProperty<Color?> overlay(Color on) => WidgetStateProperty.resolveWith(
+    (st) => st.contains(WidgetState.pressed)
+        ? on.withValues(alpha: 0.24)
+        : st.contains(WidgetState.focused)
+        ? on.withValues(alpha: 0.16)
+        : st.contains(WidgetState.hovered)
+        ? on.withValues(alpha: 0.08)
+        : null,
+  );
+  WidgetStateProperty<BorderSide?> side(Color normal, {required bool always}) => WidgetStateProperty.resolveWith(
+    (st) => st.contains(WidgetState.focused)
+        ? BorderSide(color: p.focus, width: AppSizes.focusWidth)
+        : st.contains(WidgetState.disabled)
+        ? BorderSide(color: p.border, width: AppSizes.outlineWidth)
+        : always
+        ? BorderSide(color: normal, width: AppSizes.outlineWidth)
+        : (p.buttonEdge == null ? null : BorderSide(color: p.buttonEdge!, width: AppSizes.outlineWidth)),
+  );
+  final filledStyle = ButtonStyle(
+    minimumSize: const WidgetStatePropertyAll(minSize),
+    shape: WidgetStatePropertyAll(buttonShape),
+    textStyle: const WidgetStatePropertyAll(label),
+    padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
+    tapTargetSize: MaterialTapTargetSize.padded,
+    backgroundColor: WidgetStateProperty.resolveWith((st) => st.contains(WidgetState.disabled) ? p.border : p.primary),
+    foregroundColor: WidgetStateProperty.resolveWith((st) => st.contains(WidgetState.disabled) ? p.muted : p.onPrimary),
+    overlayColor: overlay(p.onPrimary),
+    side: side(p.primary, always: false),
+  );
+  final outlinedStyle = ButtonStyle(
+    minimumSize: const WidgetStatePropertyAll(minSize),
+    shape: WidgetStatePropertyAll(buttonShape),
+    textStyle: const WidgetStatePropertyAll(label),
+    padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
+    tapTargetSize: MaterialTapTargetSize.padded,
+    backgroundColor: WidgetStatePropertyAll(p.surface),
+    foregroundColor: WidgetStateProperty.resolveWith((st) => st.contains(WidgetState.disabled) ? p.muted : p.onSurface),
+    overlayColor: overlay(p.onSurface),
+    side: side(p.outline, always: true),
+  );
+  final inputBorder = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+    borderSide: BorderSide(color: p.outline, width: AppSizes.outlineWidth),
+  );
   return base.copyWith(
     scaffoldBackgroundColor: p.background,
     textTheme: text,
+    materialTapTargetSize: MaterialTapTargetSize.padded,
+    visualDensity: VisualDensity.standard,
+    focusColor: p.focus.withValues(alpha: 0.24),
+    highlightColor: p.onSurface.withValues(alpha: 0.12),
+    splashColor: p.onSurface.withValues(alpha: 0.16),
     extensions: [AppThemeExt(p, AppMotion(reduceMotion), highContrast: mode == ThemeModeChoice.highContrast)],
     appBarTheme: AppBarTheme(
       backgroundColor: p.background,
@@ -278,48 +383,64 @@ ThemeData buildTheme(ThemeModeChoice mode, {bool reduceMotion = false, String co
       titleTextStyle: text.headlineMedium,
       toolbarHeight: 64,
     ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        minimumSize: minSize,
-        backgroundColor: p.primary,
-        foregroundColor: p.onPrimary,
-        shape: buttonShape,
-        textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, fontFamily: appFont),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        elevation: 4,
-      ),
-    ),
-    filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(minimumSize: minSize, shape: buttonShape, backgroundColor: p.primary, foregroundColor: p.onPrimary),
-    ),
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        minimumSize: minSize,
-        shape: buttonShape,
-        foregroundColor: p.onSurface,
-        side: BorderSide(color: p.border, width: 2),
-        textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, fontFamily: appFont),
-      ),
-    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(style: filledStyle.copyWith(elevation: const WidgetStatePropertyAll(4))),
+    filledButtonTheme: FilledButtonThemeData(style: filledStyle),
+    outlinedButtonTheme: OutlinedButtonThemeData(style: outlinedStyle),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(
-        minimumSize: minSize,
-        foregroundColor: p.primary,
-        textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, fontFamily: appFont),
+      style: ButtonStyle(
+        minimumSize: const WidgetStatePropertyAll(minSize),
+        shape: WidgetStatePropertyAll(buttonShape),
+        textStyle: const WidgetStatePropertyAll(label),
+        tapTargetSize: MaterialTapTargetSize.padded,
+        foregroundColor: WidgetStateProperty.resolveWith((st) => st.contains(WidgetState.disabled) ? p.muted : p.primary),
+        overlayColor: overlay(p.primary),
+        side: WidgetStateProperty.resolveWith((st) => st.contains(WidgetState.focused) ? BorderSide(color: p.focus, width: AppSizes.focusWidth) : null),
       ),
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: ButtonStyle(
+        minimumSize: const WidgetStatePropertyAll(Size(AppSizes.touchMin, AppSizes.touchMin)),
+        tapTargetSize: MaterialTapTargetSize.padded,
+        iconSize: const WidgetStatePropertyAll(28),
+        foregroundColor: WidgetStatePropertyAll(p.onSurface),
+        overlayColor: overlay(p.onSurface),
+        side: WidgetStateProperty.resolveWith((st) => st.contains(WidgetState.focused) ? BorderSide(color: p.focus, width: AppSizes.focusWidth) : null),
+      ),
+    ),
+    listTileTheme: ListTileThemeData(
+      minTileHeight: AppSizes.buttonMinHeight,
+      titleTextStyle: TextStyle(fontSize: 18, color: p.onSurface, fontFamily: appFont),
+      subtitleTextStyle: TextStyle(fontSize: AppText.caption, color: p.muted, fontFamily: appFont),
+      iconColor: p.onSurface,
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: p.surface,
+      titleTextStyle: TextStyle(fontSize: AppText.title, fontWeight: FontWeight.w700, color: p.onSurface, fontFamily: appFont),
+      contentTextStyle: TextStyle(fontSize: 18, color: p.onSurface, fontFamily: appFont),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radius),
+        side: p.buttonEdge == null ? BorderSide.none : BorderSide(color: p.outline, width: AppSizes.outlineWidth),
+      ),
+    ),
+    chipTheme: ChipThemeData(
+      labelStyle: TextStyle(fontSize: AppText.caption, fontWeight: FontWeight.w700, color: p.onSurface, fontFamily: appFont),
+      side: BorderSide(color: p.outline, width: AppSizes.outlineWidth),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: p.surface,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
-        borderSide: BorderSide(color: p.border, width: 2),
+      border: inputBorder,
+      enabledBorder: inputBorder,
+      focusedBorder: inputBorder.copyWith(
+        borderSide: BorderSide(color: p.focus, width: AppSizes.focusWidth),
       ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
-        borderSide: BorderSide(color: p.border, width: 2),
+      errorBorder: inputBorder.copyWith(
+        borderSide: BorderSide(color: p.ink(p.discard), width: AppSizes.outlineWidth),
       ),
       labelStyle: TextStyle(color: p.muted, fontSize: 17),
+      hintStyle: TextStyle(color: p.muted, fontSize: AppText.caption),
+      helperStyle: TextStyle(color: p.muted, fontSize: AppText.caption),
+      errorStyle: TextStyle(color: p.ink(p.discard), fontSize: AppText.caption, fontWeight: FontWeight.w700),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
     cardTheme: CardThemeData(
@@ -337,6 +458,16 @@ ThemeData buildTheme(ThemeModeChoice mode, {bool reduceMotion = false, String co
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? p.primary : p.muted),
       trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? p.primary.withValues(alpha: 0.4) : p.border),
+      trackOutlineColor: WidgetStatePropertyAll(p.outline),
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+    ),
+    checkboxTheme: CheckboxThemeData(
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+      side: BorderSide(color: p.outline, width: AppSizes.outlineWidth),
+    ),
+    radioTheme: RadioThemeData(
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+      fillColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? p.primary : p.outline),
     ),
   );
 }

@@ -126,6 +126,7 @@ void main() {
     ('가장 작은 화면·가장 큰 글씨·밝게', const Size(360, 640), ThemeModeChoice.light, TextSizeChoice.huge),
     ('가장 작은 화면·가장 큰 글씨·어둡게', const Size(360, 640), ThemeModeChoice.dark, TextSizeChoice.huge),
     ('가장 작은 화면·크게·고대비', const Size(360, 640), ThemeModeChoice.highContrast, TextSizeChoice.large),
+    ('가장 작은 화면·가장 큰 글씨·고대비', const Size(360, 640), ThemeModeChoice.highContrast, TextSizeChoice.huge),
     ('큰 화면·보통', const Size(1280, 800), ThemeModeChoice.light, TextSizeChoice.normal),
   ];
 
@@ -210,7 +211,7 @@ void main() {
     expect(heights[0] < heights[1] && heights[1] < heights[2], isTrue, reason: '$heights');
   });
 
-  testWidgets('버튼 최소 높이 56', (tester) async {
+  testWidgets('버튼 최소 높이 56 (기준 52 이상)', (tester) async {
     final c = await seed(tester);
     await pumpApp(tester, c, theme: ThemeModeChoice.light, text: TextSizeChoice.normal);
     for (final e in find.byType(BigButton).evaluate()) {

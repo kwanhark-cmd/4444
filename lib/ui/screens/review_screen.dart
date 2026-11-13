@@ -163,7 +163,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       children: [
                         const Text('추천:', style: TextStyle(fontSize: 16)),
                         decisionChip(context, d.suggestion),
-                        if (d.reason.isNotEmpty) Text(d.reason, style: TextStyle(color: p.muted, fontSize: 15)),
+                        if (d.reason.isNotEmpty)
+                          Text(
+                            d.reason,
+                            style: TextStyle(color: p.muted, fontSize: AppText.caption),
+                          ),
                       ],
                     ),
                   ),

@@ -317,7 +317,10 @@ class _SellDetailScreenState extends State<SellDetailScreen> {
           const SizedBox(height: 8),
           BigButton(label: writing ? '쓰는 중…' : '판매글 다시 만들기', emoji: 'speech', color: p.muted, onTap: writing ? null : _write),
           const SizedBox(height: 8),
-          Text('글을 복사한 뒤 당근마켓·번개장터 앱을 직접 열어 붙여넣으세요. 연락이 오면 각 앱의 알림으로 알 수 있어요.', style: TextStyle(color: p.muted, fontSize: 15)),
+          Text(
+            '글을 복사한 뒤 당근마켓·번개장터 앱을 직접 열어 붙여넣으세요. 연락이 오면 각 앱의 알림으로 알 수 있어요.',
+            style: TextStyle(color: p.muted, fontSize: AppText.caption),
+          ),
           const SectionTitle('택배로 보낼 때'),
           SwitchListTile(
             value: showShipping,

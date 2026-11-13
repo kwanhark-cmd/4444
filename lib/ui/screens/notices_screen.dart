@@ -67,7 +67,10 @@ class _NoticesScreenState extends State<NoticesScreen> {
                               children: [
                                 Text(n.title, style: Theme.of(context).textTheme.titleMedium),
                                 Text(n.body, style: const TextStyle(fontSize: 16)),
-                                Text(dateKo(n.createdAt), style: TextStyle(color: p.muted, fontSize: 14)),
+                                Text(
+                                  dateKo(n.createdAt),
+                                  style: TextStyle(color: p.muted, fontSize: AppText.caption),
+                                ),
                               ],
                             ),
                           ),

@@ -56,7 +56,7 @@ class ProgressScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   '${(ratio * 100).round()}%',
-                  style: TextStyle(fontSize: 48, fontWeight: FontWeight.w700, color: p.progress),
+                  style: TextStyle(fontSize: 48, fontWeight: FontWeight.w700, color: p.ink(p.progress)),
                 ),
                 BigProgress(ratio, label: '비우기 진행'),
                 const SizedBox(height: 6),

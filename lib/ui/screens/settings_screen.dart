@@ -72,7 +72,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _switch(String title, bool v, ValueChanged<bool> on, {String? sub}) => SwitchListTile(
     contentPadding: EdgeInsets.zero,
     title: Text(title, style: const TextStyle(fontSize: 18)),
-    subtitle: sub == null ? null : Text(sub, style: const TextStyle(fontSize: 15)),
+    subtitle: sub == null ? null : Text(sub, style: const TextStyle(fontSize: AppText.caption)),
     value: v,
     onChanged: (x) {
       on(x);
@@ -372,7 +372,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // ---------- 사용자 ----------
           _group('use', '사용자', [
             Text('지금 사용자: ${s.currentUser?.name}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-            const Text('사용자마다 물건 목록이 따로 보관돼요.', style: TextStyle(fontSize: 15)),
+            const Text('사용자마다 물건 목록이 따로 보관돼요.', style: TextStyle(fontSize: AppText.caption)),
             gap,
             for (final u in s.users)
               if (u.id != s.currentUser?.id)
@@ -443,7 +443,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 contentPadding: EdgeInsets.zero,
                 leading: const Emoji3D('folder', size: 36),
                 title: const Text('내보내기 폴더 (위치 복사)', style: TextStyle(fontSize: 18)),
-                subtitle: Text(s.paths.exports.path, style: const TextStyle(fontSize: 14)),
+                subtitle: Text(s.paths.exports.path, style: const TextStyle(fontSize: AppText.caption)),
                 onTap: () {
                   Clipboard.setData(ClipboardData(text: s.paths.exports.path));
                   showMessage('폴더 위치를 복사했어요');
@@ -473,7 +473,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('조심하세요', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: p.discard)),
+                Text('조심하세요', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: p.ink(p.discard))),
                 const SizedBox(height: 6),
                 const Text('모든 사용자·물건·사진·설정을 지워요. 먼저 백업을 만들어 두세요.', style: TextStyle(fontSize: 16)),
                 gap,
